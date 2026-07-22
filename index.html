@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Healthy Day — 로그인</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAF8F4; --surface:#FFFFFF; --line:#E6E2D8;
+    --text:#26241F; --text-muted:#6F6C63; --text-dim:#A6A296;
+    --amber:#C67A1E; --red:#C4483C;
+    --mono:'IBM Plex Mono',monospace; --sans:'Noto Sans KR',sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:#EFECE4; font-family:var(--sans);
+    display:flex; justify-content:center; align-items:center;
+    min-height:100vh; padding:20px;
+  }
+  .card{
+    width:100%; max-width:360px; background:var(--surface);
+    border:1px solid var(--line); border-radius:20px; padding:36px 28px;
+  }
+  .eyebrow{
+    font-family:var(--mono); font-size:11px; letter-spacing:0.14em;
+    color:var(--amber); text-transform:uppercase; margin-bottom:8px;
+  }
+  h1{ font-size:22px; margin-bottom:6px; }
+  .sub{ font-size:13px; color:var(--text-muted); margin-bottom:28px; }
+  label{
+    font-family:var(--mono); font-size:11px; color:var(--text-dim);
+    display:block; margin-bottom:6px;
+  }
+  input{
+    width:100%; padding:13px 14px; border:1px solid var(--line);
+    border-radius:10px; font-size:14px; margin-bottom:16px;
+    background:#FBFAF7; color:var(--text); outline:none;
+  }
+  input:focus{ border-color:var(--amber); }
+  button{
+    width:100%; padding:15px; background:var(--amber); color:#fff;
+    border:none; border-radius:12px; font-weight:700; font-size:14.5px;
+    cursor:pointer; margin-top:6px;
+  }
+  button:disabled{ opacity:0.5; cursor:not-allowed; }
+  .error{
+    color:var(--red); font-size:12.5px; margin-top:12px; display:none;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="eyebrow">Healthy Day</div>
+  <h1>로그인</h1>
+  <div class="sub">일일 건강 기록에 접속합니다</div>
+
+  <label>이메일</label>
+  <input type="email" id="email" placeholder="you@example.com" autocomplete="username">
+
+  <label>비밀번호</label>
+  <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+
+  <button id="loginBtn">로그인</button>
+  <div class="error" id="errorMsg"></div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getAuth, signInWithEmailAndPassword, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAjILNLFfVdu043wEzjP9oovIONPqkSgdg",
+    authDomain: "healthy-day-7b0a9.firebaseapp.com",
+    projectId: "healthy-day-7b0a9",
+    storageBucket: "healthy-day-7b0a9.firebasestorage.app",
+    messagingSenderId: "382229501344",
+    appId: "1:382229501344:web:8e996f022226a43624c0c5"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  // 이미 로그인되어 있으면 바로 앱으로 이동
+  onAuthStateChanged(auth, (user) => {
+    if (user) window.location.href = "app.html";
+  });
+
+  const loginBtn = document.getElementById("loginBtn");
+  const errorMsg = document.getElementById("errorMsg");
+
+  loginBtn.addEventListener("click", async () => {
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    errorMsg.style.display = "none";
+
+    if (!email || !password) {
+      errorMsg.textContent = "이메일과 비밀번호를 입력해주세요.";
+      errorMsg.style.display = "block";
+      return;
+    }
+
+    loginBtn.disabled = true;
+    loginBtn.textContent = "로그인 중...";
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      window.location.href = "app.html";
+    } catch (err) {
+      errorMsg.textContent = "로그인 실패: 이메일 또는 비밀번호를 확인해주세요.";
+      errorMsg.style.display = "block";
+      loginBtn.disabled = false;
+      loginBtn.textContent = "로그인";
+    }
+  });
+
+  // 엔터키로도 로그인
+  document.getElementById("password").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") loginBtn.click();
+  });
+</script>
+
+</body>
+</html>
