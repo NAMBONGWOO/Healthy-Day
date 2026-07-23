@@ -274,7 +274,25 @@
   let currentUser = null;
 
   onAuthStateChanged(auth, (user) => {
-    if (!user) { window.location.href = "index.html"; return; }
+    if (!user) {
+      if (sessionStorage.getItem("hd_bounced_from_index")) {
+        // index.html에서 이미 한 번 튕겨져 온 상태 — 루프 발생, 중단하고 진단 표시
+        sessionStorage.removeItem("hd_bounced_from_index");
+        document.body.insertAdjacentHTML("afterbegin",
+          `<div style="margin:16px;padding:12px;background:#FBEAE8;border:1px solid #E8C4C0;border-radius:8px;font-size:12px;color:#8a2f26;">
+             index.html은 로그인 상태로 인식했는데 이 페이지(app.html)에서는 비로그인으로 판단됩니다.<br>
+             콘솔(F12)에서 에러 메시지를 확인해주세요.
+             <a href="index.html" style="color:#8a2f26;">로그인 페이지로 이동</a>
+           </div>`);
+        console.warn("[Healthy Day] 리다이렉트 루프 감지: app.html에서 user가 null입니다. auth.currentUser:", auth.currentUser);
+        return;
+      }
+      sessionStorage.setItem("hd_bounced_from_app", "1");
+      window.location.href = "index.html";
+      return;
+    }
+    sessionStorage.removeItem("hd_bounced_from_index");
+    sessionStorage.removeItem("hd_bounced_from_app");
     currentUser = user;
     document.getElementById("userEmail").textContent = user.email;
     document.getElementById("todayLabel").textContent = todayStr();
