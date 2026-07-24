@@ -60,6 +60,22 @@
   .chip{ font-size:12.5px; padding:9px 13px; border-radius:20px; border:1px solid var(--line); background:var(--surface-2); color:var(--text-muted); cursor:pointer; }
   .chip.selected{ background:var(--amber-dim); border-color:var(--amber); color:var(--amber); font-weight:600; }
 
+  .level-row{ display:flex; gap:6px; margin-bottom:16px; }
+  .level-opt{ flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 4px; border-radius:10px; border:1px solid var(--line); background:var(--surface-2); cursor:pointer; }
+  .level-opt .lv-num{ font-family:var(--mono); font-size:15px; font-weight:700; color:var(--text-muted); }
+  .level-opt .lv-label{ font-size:9.5px; color:var(--text-dim); text-align:center; line-height:1.2; }
+  .level-opt.selected{ background:var(--amber-dim); border-color:var(--amber); }
+  .level-opt.selected .lv-num, .level-opt.selected .lv-label{ color:var(--amber); font-weight:700; }
+
+  .cat-group{ margin-bottom:14px; }
+  .cat-group:last-child{ margin-bottom:0; }
+  .cat-title{ font-size:11.5px; font-weight:600; color:var(--text-muted); margin-bottom:7px; }
+  .cat-chip{ font-size:11.5px; padding:7px 11px; border-radius:16px; border:1px solid var(--line); background:var(--surface-2); color:var(--text-muted); cursor:pointer; }
+  .cat-chip.selected{ background:var(--amber-dim); border-color:var(--amber); color:var(--amber); font-weight:600; }
+  .kcal-readout{ margin-top:14px; padding:11px 13px; background:var(--surface-2); border-radius:9px; font-family:var(--mono); font-size:13px; font-weight:600; color:var(--text); display:flex; justify-content:space-between; align-items:center; }
+  .kcal-readout .lbl{ font-family:var(--sans); font-size:11px; font-weight:500; color:var(--text-dim); }
+  .memo-input{ margin-top:12px; }
+
   .meal-tabs{ display:flex; gap:6px; margin-bottom:10px; }
   .meal-tab{ font-family:var(--mono); font-size:11px; padding:6px 10px; border-radius:7px; background:var(--surface-2); color:var(--text-dim); border:1px solid var(--line); cursor:pointer; }
   .meal-tab.filled{ color:var(--text); border-color:var(--text-dim); }
@@ -137,23 +153,34 @@
 
     <div class="card" id="card-intensity" data-acc>
       <div class="acc-header" onclick="toggleCard(this)">
-        <div class="acc-header-left"><span class="acc-dot"></span><span class="acc-title">오늘 작업 강도</span></div>
+        <div class="acc-header-left"><span class="acc-dot"></span><span class="acc-title">작업 강도</span></div>
         <div class="acc-right"><span class="acc-preview" id="preview-intensity">미입력</span><span class="acc-chevron"></span></div>
       </div>
       <div class="acc-body">
-        <div class="chip-row" id="intensityChips">
-          <div class="chip" data-value="여유" data-bonus="60">단일 제품 · 여유</div>
-          <div class="chip" data-value="보통" data-bonus="150">보통</div>
-          <div class="chip" data-value="다품종" data-bonus="300">다품종 · 반복 많음</div>
-          <div class="chip" data-value="불량조치" data-bonus="400">불량 조치 있었음</div>
+        <label class="field-title" style="margin-top:0;">체감 강도</label>
+        <div class="level-row" id="levelRow">
+          <div class="level-opt" data-level="1" data-bonus="60"><span class="lv-num">1</span><span class="lv-label">매우 여유</span></div>
+          <div class="level-opt" data-level="2" data-bonus="120"><span class="lv-num">2</span><span class="lv-label">여유</span></div>
+          <div class="level-opt" data-level="3" data-bonus="180"><span class="lv-num">3</span><span class="lv-label">보통</span></div>
+          <div class="level-opt" data-level="4" data-bonus="260"><span class="lv-num">4</span><span class="lv-label">힘듦</span></div>
+          <div class="level-opt" data-level="5" data-bonus="350"><span class="lv-num">5</span><span class="lv-label">매우 힘듦</span></div>
+        </div>
+
+        <label class="field-title">작업 유형 (중복 선택 가능)</label>
+        <div class="chip-row" id="workTypeChips">
+          <div class="chip multi" data-value="정상 생산">정상 생산</div>
+          <div class="chip multi" data-value="샘플 작업">샘플 작업</div>
+          <div class="chip multi" data-value="신규 제품 생산">신규 제품 생산</div>
+          <div class="chip multi" data-value="불량 조치">불량 조치</div>
+          <div class="chip multi" data-value="기타 이슈">기타 이슈</div>
         </div>
       </div>
     </div>
 
     <div class="card" id="card-meals" data-acc>
       <div class="acc-header" onclick="toggleCard(this)">
-        <div class="acc-header-left"><span class="acc-dot"></span><span class="acc-title">식사 기록</span></div>
-        <div class="acc-right"><span class="acc-preview" id="preview-meals">0/4끼 작성</span><span class="acc-chevron"></span></div>
+        <div class="acc-header-left"><span class="acc-dot"></span><span class="acc-title">칼로리 섭취</span></div>
+        <div class="acc-right"><span class="acc-preview" id="preview-meals">미입력</span><span class="acc-chevron"></span></div>
       </div>
       <div class="acc-body">
         <div class="meal-tabs" id="mealTabs">
@@ -163,28 +190,20 @@
           <div class="meal-tab" data-meal="snack">간식</div>
         </div>
         <div class="meal-block active" data-meal="breakfast">
-          <label class="field-title">메뉴</label>
-          <textarea id="meal-breakfast-text" oninput="onFieldChange()" placeholder="예: 모닝빵+감자샐러드, 견과류"></textarea>
-          <label class="field-title">추정 칼로리 (kcal)</label>
-          <input type="number" id="meal-breakfast-kcal" oninput="onFieldChange()" placeholder="0">
+          <div class="cat-container" id="cat-breakfast"></div>
+          <div class="kcal-readout"><span class="lbl">추정 칼로리</span><span id="kcal-breakfast">0 kcal</span></div>
         </div>
         <div class="meal-block" data-meal="lunch">
-          <label class="field-title">메뉴</label>
-          <textarea id="meal-lunch-text" oninput="onFieldChange()" placeholder="예: 잡곡밥, 순두부찌개, 김치…"></textarea>
-          <label class="field-title">추정 칼로리 (kcal)</label>
-          <input type="number" id="meal-lunch-kcal" oninput="onFieldChange()" placeholder="0">
+          <div class="cat-container" id="cat-lunch"></div>
+          <div class="kcal-readout"><span class="lbl">추정 칼로리</span><span id="kcal-lunch">0 kcal</span></div>
         </div>
         <div class="meal-block" data-meal="dinner">
-          <label class="field-title">메뉴</label>
-          <textarea id="meal-dinner-text" oninput="onFieldChange()" placeholder="예: 잡곡밥, 닭곰탕, 김치…"></textarea>
-          <label class="field-title">추정 칼로리 (kcal)</label>
-          <input type="number" id="meal-dinner-kcal" oninput="onFieldChange()" placeholder="0">
+          <div class="cat-container" id="cat-dinner"></div>
+          <div class="kcal-readout"><span class="lbl">추정 칼로리</span><span id="kcal-dinner">0 kcal</span></div>
         </div>
         <div class="meal-block" data-meal="snack">
-          <label class="field-title">메뉴</label>
-          <textarea id="meal-snack-text" oninput="onFieldChange()" placeholder="예: 견과류, 믹스커피"></textarea>
-          <label class="field-title">추정 칼로리 (kcal)</label>
-          <input type="number" id="meal-snack-kcal" oninput="onFieldChange()" placeholder="0">
+          <div class="cat-container" id="cat-snack"></div>
+          <div class="kcal-readout"><span class="lbl">추정 칼로리</span><span id="kcal-snack">0 kcal</span></div>
         </div>
       </div>
     </div>
@@ -207,6 +226,18 @@
             <input type="number" step="0.01" id="input-muscle" oninput="onFieldChange()" placeholder="0.00">
           </div>
         </div>
+        <div class="row2">
+          <div>
+            <label class="field-title">체지방량 (kg)</label>
+            <input type="number" step="0.01" id="input-fatmass" oninput="onFieldChange()" placeholder="0.00">
+          </div>
+          <div>
+            <label class="field-title">내장지방지수</label>
+            <input type="number" step="1" id="input-visceral" oninput="onFieldChange()" placeholder="0">
+          </div>
+        </div>
+        <label class="field-title">BMI (자동계산)</label>
+        <input type="text" id="input-bmi" disabled placeholder="—" style="background:#EDEAE2; color:var(--text-dim);">
       </div>
     </div>
 
@@ -271,9 +302,116 @@
     return Math.round(10*weightKg + 6.25*HEIGHT_CM - 5*calcAge() + 5);
   }
 
+  // ---- 칼로리 섭취 카테고리 설정 ----
+  const LUNCH_DINNER_CATS = [
+    { id:'staple', title:'주식 (밥·면·빵)', options:[
+      {key:'none',label:'없음',kcal:0},{key:'light',label:'소량(반공기)',kcal:140},
+      {key:'normal',label:'보통(1공기)',kcal:280},{key:'much',label:'많음(1.5공기+)',kcal:400}
+    ]},
+    { id:'protein', title:'단백질 반찬', options:[
+      {key:'none',label:'없음',kcal:0},{key:'light',label:'가벼움(계란·두부)',kcal:100},
+      {key:'normal',label:'보통(고기·생선 소량)',kcal:180},{key:'much',label:'많음(넉넉히)',kcal:280}
+    ]},
+    { id:'soup', title:'국·찌개', options:[
+      {key:'none',label:'안 먹음',kcal:0},{key:'light',label:'건더기 위주',kcal:100},{key:'normal',label:'국물까지',kcal:180}
+    ]},
+    { id:'side', title:'밑반찬·채소', options:[
+      {key:'few',label:'1~2가지',kcal:30},{key:'normal',label:'3~4가지',kcal:60},{key:'many',label:'5가지 이상',kcal:100}
+    ]},
+    { id:'fried', title:'튀김·가공식품', options:[
+      {key:'none',label:'없음',kcal:0},{key:'light',label:'조금 포함',kcal:120},{key:'much',label:'많음',kcal:250}
+    ]}
+  ];
+  const MEAL_CATEGORIES = {
+    breakfast: [
+      { id:'staple', title:'주식 (빵·시리얼·밥 등)', options:[
+        {key:'none',label:'없음',kcal:0},{key:'light',label:'가벼움',kcal:100},
+        {key:'normal',label:'보통',kcal:200},{key:'much',label:'많음',kcal:320}
+      ]},
+      { id:'protein', title:'단백질 (계란·요거트·견과류 등)', options:[
+        {key:'none',label:'없음',kcal:0},{key:'light',label:'조금',kcal:70},
+        {key:'normal',label:'보통',kcal:140},{key:'much',label:'많음',kcal:220}
+      ]},
+      { id:'fruit', title:'과일·채소', options:[
+        {key:'none',label:'없음',kcal:0},{key:'light',label:'조금',kcal:40},{key:'normal',label:'보통',kcal:80}
+      ]}
+    ],
+    lunch: LUNCH_DINNER_CATS,
+    dinner: LUNCH_DINNER_CATS,
+    snack: [
+      { id:'type', title:'유형', options:[
+        {key:'fruit',label:'과일',kcal:60},{key:'nuts',label:'견과류',kcal:150},
+        {key:'drink',label:'커피/음료',kcal:60},{key:'bread',label:'빵·과자류',kcal:200},{key:'none',label:'없음',kcal:0}
+      ]},
+      { id:'amount', title:'양', options:[
+        {key:'light',label:'조금',mult:0.7},{key:'normal',label:'보통',mult:1.0},{key:'much',label:'많음',mult:1.4}
+      ]}
+    ]
+  };
+  const mealSelections = { breakfast:{}, lunch:{}, dinner:{}, snack:{} };
+
+  function renderMealCategories(mealKey){
+    const container = document.getElementById(`cat-${mealKey}`);
+    const groups = MEAL_CATEGORIES[mealKey];
+    container.innerHTML = groups.map(g => `
+      <div class="cat-group" data-group="${g.id}">
+        <div class="cat-title">${g.title}</div>
+        <div class="chip-row">
+          ${g.options.map(o => `<div class="cat-chip" data-key="${o.key}" data-kcal="${o.kcal ?? ''}" data-mult="${o.mult ?? ''}">${o.label}</div>`).join('')}
+        </div>
+      </div>
+    `).join('');
+  }
+  ['breakfast','lunch','dinner','snack'].forEach(renderMealCategories);
+
+  function computeMealKcal(mealKey){
+    const sel = mealSelections[mealKey];
+    const groups = MEAL_CATEGORIES[mealKey];
+    let kcal;
+    if (mealKey === 'snack'){
+      const typeOpt = groups[0].options.find(o=>o.key===sel.type);
+      const amtOpt = groups[1].options.find(o=>o.key===sel.amount);
+      const base = typeOpt ? typeOpt.kcal : 0;
+      const mult = amtOpt ? amtOpt.mult : 1;
+      kcal = Math.round(base * mult);
+    } else {
+      kcal = groups.reduce((sum,g)=>{
+        const opt = g.options.find(o=>o.key===sel[g.id]);
+        return sum + (opt ? opt.kcal : 0);
+      }, 0);
+    }
+    document.getElementById(`kcal-${mealKey}`).textContent = `${kcal} kcal`;
+    return kcal;
+  }
+
+  document.querySelectorAll('.cat-container').forEach(container => {
+    container.addEventListener('click', (e) => {
+      const chip = e.target.closest('.cat-chip');
+      if (!chip) return;
+      const group = chip.closest('.cat-group');
+      const mealKey = container.id.replace('cat-','');
+      group.querySelectorAll('.cat-chip').forEach(c=>c.classList.remove('selected'));
+      chip.classList.add('selected');
+      mealSelections[mealKey][group.dataset.group] = chip.dataset.key;
+      computeMealKcal(mealKey);
+      updateCardStates();
+    });
+  });
+
   let currentUser = null;
 
+  const DEBUG_MODE = new URLSearchParams(window.location.search).has("debug");
+
   onAuthStateChanged(auth, (user) => {
+    if (DEBUG_MODE) {
+      document.body.insertAdjacentHTML("afterbegin",
+        `<div style="margin:16px;padding:12px;background:#EEF6F1;border:1px solid #CFE3D6;border-radius:8px;font-size:12px;color:#1d5c3d;">
+           [DEBUG] app.html 상태<br>
+           user: ${user ? user.email : "null (로그인 안됨)"}<br>
+           uid: ${user ? user.uid : "-"}
+         </div>`);
+      if (!user) return; // 디버그 모드에서는 리다이렉트 안 함
+    }
     if (!user) {
       if (sessionStorage.getItem("hd_bounced_from_index")) {
         // index.html에서 이미 한 번 튕겨져 온 상태 — 루프 발생, 중단하고 진단 표시
@@ -320,14 +458,25 @@
     if (name==="dashboard") loadDashboard();
   };
 
-  // ---- 작업강도 칩 선택 ----
-  let selectedIntensity = null;
-  document.getElementById("intensityChips").addEventListener("click", (e) => {
-    const chip = e.target.closest(".chip");
+  // ---- 체감 강도(1-5, 단일선택) ----
+  let selectedLevel = null;
+  document.getElementById("levelRow").addEventListener("click", (e) => {
+    const opt = e.target.closest(".level-opt");
+    if (!opt) return;
+    document.querySelectorAll("#levelRow .level-opt").forEach(o=>o.classList.remove("selected"));
+    opt.classList.add("selected");
+    selectedLevel = { level: Number(opt.dataset.level), bonus: Number(opt.dataset.bonus), label: opt.querySelector(".lv-label").textContent };
+    updateCardStates();
+  });
+
+  // ---- 작업 유형(중복선택) ----
+  const selectedWorkTypes = new Set();
+  document.getElementById("workTypeChips").addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip.multi");
     if (!chip) return;
-    document.querySelectorAll("#intensityChips .chip").forEach(c=>c.classList.remove("selected"));
-    chip.classList.add("selected");
-    selectedIntensity = { value: chip.dataset.value, bonus: Number(chip.dataset.bonus) };
+    chip.classList.toggle("selected");
+    if (chip.classList.contains("selected")) selectedWorkTypes.add(chip.dataset.value);
+    else selectedWorkTypes.delete(chip.dataset.value);
     updateCardStates();
   });
 
@@ -351,26 +500,36 @@
     document.getElementById("preview-steps").textContent = steps ? `${Number(steps).toLocaleString()}보` : "미입력";
 
     const intensityCard = document.getElementById("card-intensity");
-    intensityCard.classList.toggle("filled", !!selectedIntensity);
-    document.getElementById("preview-intensity").textContent = selectedIntensity ? selectedIntensity.value : "미입력";
+    intensityCard.classList.toggle("filled", !!selectedLevel || selectedWorkTypes.size>0);
+    const intensityParts = [];
+    if (selectedLevel) intensityParts.push(`Lv${selectedLevel.level}·${selectedLevel.label}`);
+    if (selectedWorkTypes.size) intensityParts.push([...selectedWorkTypes].join(","));
+    document.getElementById("preview-intensity").textContent = intensityParts.length ? intensityParts.join(" / ") : "미입력";
 
-    const meals = ["breakfast","lunch","dinner","snack"];
-    let filledCount = 0;
-    meals.forEach(m=>{
-      const txt = document.getElementById(`meal-${m}-text`).value;
+    const totalMealKcal = ["breakfast","lunch","dinner","snack"].reduce((s,m)=>{
       const tab = document.querySelector(`.meal-tab[data-meal="${m}"]`);
-      const hasContent = !!txt;
-      tab.classList.toggle("filled", hasContent);
-      if (hasContent) filledCount++;
-    });
+      tab.classList.toggle("filled", Object.keys(mealSelections[m]).length>0);
+      return s+computeMealKcal(m);
+    },0);
+    const anyMealSelected = ["breakfast","lunch","dinner","snack"].some(m=>Object.keys(mealSelections[m]).length>0);
     const mealsCard = document.getElementById("card-meals");
-    mealsCard.classList.toggle("filled", filledCount>0);
-    document.getElementById("preview-meals").textContent = `${filledCount}/4끼 작성`;
+    mealsCard.classList.toggle("filled", anyMealSelected);
+    document.getElementById("preview-meals").textContent = anyMealSelected ? `총 ${totalMealKcal}kcal` : "미입력";
 
     const weight = document.getElementById("input-weight").value;
     const scaleCard = document.getElementById("card-scale");
     scaleCard.classList.toggle("filled", !!weight);
     document.getElementById("preview-scale").textContent = weight ? `${weight}kg` : "미입력";
+
+    // BMI 자동계산 (키 172cm 고정)
+    const bmiField = document.getElementById("input-bmi");
+    if (weight) {
+      const heightM = HEIGHT_CM / 100;
+      const bmi = (Number(weight) / (heightM * heightM)).toFixed(1);
+      bmiField.value = bmi;
+    } else {
+      bmiField.value = "";
+    }
   }
 
   // ---- 저장 ----
@@ -381,20 +540,20 @@
 
     const meals = {};
     ["breakfast","lunch","dinner","snack"].forEach(m=>{
-      meals[m] = {
-        text: document.getElementById(`meal-${m}-text`).value.trim(),
-        kcal: Number(document.getElementById(`meal-${m}-kcal`).value) || 0
-      };
+      meals[m] = { selections: {...mealSelections[m]}, kcal: computeMealKcal(m) };
     });
 
     const data = {
       steps: Number(document.getElementById("input-steps").value) || 0,
-      workIntensity: selectedIntensity ? selectedIntensity.value : null,
-      workIntensityBonus: selectedIntensity ? selectedIntensity.bonus : 0,
+      intensityLevel: selectedLevel ? selectedLevel.level : null,
+      intensityBonus: selectedLevel ? selectedLevel.bonus : 0,
+      workTypes: [...selectedWorkTypes],
       meals,
       weight: Number(document.getElementById("input-weight").value) || null,
       bodyFat: Number(document.getElementById("input-bodyfat").value) || null,
       muscleMass: Number(document.getElementById("input-muscle").value) || null,
+      fatMass: Number(document.getElementById("input-fatmass").value) || null,
+      visceralFat: Number(document.getElementById("input-visceral").value) || null,
       updatedAt: serverTimestamp()
     };
 
@@ -420,21 +579,36 @@
     if (!snap.exists()) return;
     const d = snap.data();
     if (d.steps) document.getElementById("input-steps").value = d.steps;
-    if (d.workIntensity) {
-      const chip = document.querySelector(`.chip[data-value="${d.workIntensity}"]`);
-      if (chip) { chip.classList.add("selected"); selectedIntensity = { value: d.workIntensity, bonus: d.workIntensityBonus||0 }; }
+    if (d.intensityLevel) {
+      const opt = document.querySelector(`.level-opt[data-level="${d.intensityLevel}"]`);
+      if (opt) {
+        opt.classList.add("selected");
+        selectedLevel = { level: d.intensityLevel, bonus: d.intensityBonus||0, label: opt.querySelector(".lv-label").textContent };
+      }
+    }
+    if (d.workTypes) {
+      d.workTypes.forEach(v=>{
+        const chip = document.querySelector(`.chip.multi[data-value="${v}"]`);
+        if (chip) { chip.classList.add("selected"); selectedWorkTypes.add(v); }
+      });
     }
     if (d.meals) {
       Object.keys(d.meals).forEach(m=>{
-        const el = document.getElementById(`meal-${m}-text`);
-        const kcalEl = document.getElementById(`meal-${m}-kcal`);
-        if (el) el.value = d.meals[m].text || "";
-        if (kcalEl) kcalEl.value = d.meals[m].kcal || "";
+        const selections = d.meals[m].selections || {};
+        Object.keys(selections).forEach(groupId=>{
+          const key = selections[groupId];
+          const chip = document.querySelector(`#cat-${m} .cat-group[data-group="${groupId}"] .cat-chip[data-key="${key}"]`);
+          if (chip) chip.classList.add("selected");
+          mealSelections[m][groupId] = key;
+        });
+        computeMealKcal(m);
       });
     }
     if (d.weight) document.getElementById("input-weight").value = d.weight;
     if (d.bodyFat) document.getElementById("input-bodyfat").value = d.bodyFat;
     if (d.muscleMass) document.getElementById("input-muscle").value = d.muscleMass;
+    if (d.fatMass) document.getElementById("input-fatmass").value = d.fatMass;
+    if (d.visceralFat) document.getElementById("input-visceral").value = d.visceralFat;
     updateCardStates();
   }
 
@@ -456,7 +630,7 @@
     const weightForBMR = today.weight || [...logs].reverse().find(l=>l.weight)?.weight || 67;
     const bmr = calcBMR(weightForBMR);
     const activityKcal = Math.round((today.steps||0) * STEP_KCAL);
-    const tdee = bmr + activityKcal + (today.workIntensityBonus||0);
+    const tdee = bmr + activityKcal + (today.intensityBonus||0);
     const balance = totalKcal - tdee;
 
     const pct = Math.max(0, Math.min(100, ((totalKcal/tdee)*100)));
@@ -496,7 +670,7 @@
         </div>
         <div class="stat-grid">
           <div class="stat-box"><div class="k">기초대사량</div><div class="v">${bmr} <span style="font-size:10px;color:var(--text-dim)">kcal</span></div></div>
-          <div class="stat-box"><div class="k">활동+근무 보정</div><div class="v">${activityKcal + (today.workIntensityBonus||0)} <span style="font-size:10px;color:var(--text-dim)">kcal</span></div></div>
+          <div class="stat-box"><div class="k">활동+근무 보정</div><div class="v">${activityKcal + (today.intensityBonus||0)} <span style="font-size:10px;color:var(--text-dim)">kcal</span></div></div>
         </div>
       </div>
 
@@ -509,7 +683,7 @@
           </div>
           <div class="analysis-line">
             <div class="tag">작업강도</div>
-            <div class="body">오늘 강도: <b>${today.workIntensity || "미입력"}</b> (${today.steps||0}보)</div>
+            <div class="body">체감 강도 <b>Lv${today.intensityLevel||"—"}</b> · ${(today.workTypes&&today.workTypes.length)?today.workTypes.join(", "):"미입력"} (${today.steps||0}보)</div>
           </div>
           <div class="analysis-line">
             <div class="tag">신장</div>
