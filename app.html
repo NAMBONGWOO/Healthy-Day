@@ -119,23 +119,45 @@
   .nav-item.active{ color:var(--amber); }
   .nav-icon{ width:22px; height:22px; margin:0 auto 5px; border:1.6px solid currentColor; border-radius:6px; }
   .nav-item:nth-child(2) .nav-icon{ border-radius:50%; }
+  .nav-item:nth-child(3) .nav-icon{ border-radius:11px 11px 4px 4px; }
   .nav-label{ font-family:var(--mono); font-size:10px; }
+
+  .app-title-bar{ padding:20px 0 14px; text-align:center; border-bottom:1px solid var(--line); }
+  .app-title{ font-size:19px; font-weight:800; letter-spacing:-0.02em; color:var(--text); }
+
+  .date-nav{ display:flex; align-items:center; justify-content:center; gap:14px; margin-top:2px; }
+  .date-arrow{ width:26px; height:26px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--text-muted); font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .date-input-wrap{ position:relative; }
+  .date-display{ font-family:var(--mono); font-size:13px; color:var(--text); font-weight:600; padding:6px 10px; border:1px solid var(--line); border-radius:8px; background:var(--surface-2); cursor:pointer; }
+  .date-input-hidden{ position:absolute; inset:0; opacity:0; cursor:pointer; }
+  .today-badge{ font-family:var(--mono); font-size:9.5px; color:var(--green); background:var(--green-dim); padding:2px 7px; border-radius:10px; margin-left:6px; }
+  .past-badge{ font-family:var(--mono); font-size:9.5px; color:var(--amber); background:var(--amber-dim); padding:2px 7px; border-radius:10px; margin-left:6px; }
+
+  .mypage-field{ margin-bottom:16px; }
+  .mypage-save{ width:100%; padding:14px; background:var(--amber); color:#FFF; font-weight:700; font-size:13.5px; border:none; border-radius:12px; cursor:pointer; margin-top:4px; }
+  .mypage-divider{ height:1px; background:var(--line); margin:24px 0 18px; }
+  .mypage-email{ font-family:var(--mono); font-size:12px; color:var(--text-dim); margin-bottom:14px; }
+  .logout-btn{ width:100%; padding:13px; background:var(--surface-2); color:var(--red); font-weight:700; font-size:13px; border:1px solid var(--line); border-radius:12px; cursor:pointer; }
 </style>
 </head>
 <body>
 
 <div class="phone">
-  <div class="statusbar">
-    <span id="userEmail">—</span>
-    <span class="logout" id="logoutBtn">로그아웃</span>
+  <div class="app-title-bar">
+    <div class="app-title">Healthy Day</div>
   </div>
 
   <!-- ===================== INPUT ===================== -->
   <div class="screen active" id="screen-input">
-    <div class="header" style="border:none; padding:8px 0 20px;">
-      <div class="eyebrow">Healthy Day</div>
-      <h1>오늘 하루, 기록</h1>
-      <div class="date" id="todayLabel">—</div>
+    <div class="header" style="border:none; padding:14px 0 18px;">
+      <div class="date-nav">
+        <button class="date-arrow" onclick="changeDate(-1)">‹</button>
+        <div class="date-input-wrap">
+          <span class="date-display" id="dateDisplay">—</span>
+          <input type="date" id="dateInput" class="date-input-hidden" onchange="onDatePicked()">
+        </div>
+        <button class="date-arrow" onclick="changeDate(1)">›</button>
+      </div>
     </div>
 
     <div class="card" id="card-steps" data-acc>
@@ -258,9 +280,43 @@
     </div>
   </div>
 
+  <!-- ===================== MY PAGE ===================== -->
+  <div class="screen" id="screen-mypage">
+    <div class="header" style="border:none; padding:8px 0 20px;">
+      <div class="eyebrow">마이페이지</div>
+      <h1>내 정보</h1>
+    </div>
+
+    <div class="card open">
+      <div class="acc-header"><div class="acc-header-left"><span class="acc-title" style="color:var(--text)">개인 신상</span></div></div>
+      <div class="acc-body" style="max-height:600px; padding:0 18px 18px;">
+        <div class="mypage-field">
+          <label class="field-title" style="margin-top:0;">이름</label>
+          <input type="text" id="profile-name" placeholder="홍길동">
+        </div>
+        <div class="row2">
+          <div class="mypage-field">
+            <label class="field-title">출생연도</label>
+            <input type="number" id="profile-birthyear" placeholder="1975">
+          </div>
+          <div class="mypage-field">
+            <label class="field-title">신장 (cm)</label>
+            <input type="number" step="0.1" id="profile-height" placeholder="172">
+          </div>
+        </div>
+        <button class="mypage-save" id="profileSaveBtn" onclick="saveProfile()">저장</button>
+      </div>
+    </div>
+
+    <div class="mypage-divider"></div>
+    <div class="mypage-email" id="userEmail">—</div>
+    <button class="logout-btn" id="logoutBtn">로그아웃</button>
+  </div>
+
   <div class="navbar">
     <div class="nav-item active" onclick="showScreen('input')"><div class="nav-icon"></div><div class="nav-label">입력</div></div>
     <div class="nav-item" onclick="showScreen('dashboard')"><div class="nav-icon"></div><div class="nav-label">분석</div></div>
+    <div class="nav-item" onclick="showScreen('mypage')"><div class="nav-icon"></div><div class="nav-label">마이페이지</div></div>
   </div>
 </div>
 
@@ -285,15 +341,17 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // ---- 사용자 프로필 상수 (BMR 계산용) ----
-  const BIRTH_YEAR = 1975;
-  const HEIGHT_CM = 172;
+  // ---- 사용자 프로필 상수 (BMR 계산용, 마이페이지에서 수정 가능) ----
+  let BIRTH_YEAR = 1975;
+  let HEIGHT_CM = 172;
   const STEP_KCAL = 0.031; // 보당 kcal (11,500보/737kcal 근거로 아이폰 데이터 기반 산출)
 
-  function todayStr(){
-    const d = new Date();
-    return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
-  }
+  function pad2(n){ return String(n).padStart(2,"0"); }
+  function dateToStr(d){ return d.getFullYear() + "-" + pad2(d.getMonth()+1) + "-" + pad2(d.getDate()); }
+  function todayStr(){ return dateToStr(new Date()); }
+
+  let selectedDateStr = todayStr();
+
   function calcAge(){
     return new Date().getFullYear() - BIRTH_YEAR;
   }
@@ -402,7 +460,7 @@
 
   const DEBUG_MODE = new URLSearchParams(window.location.search).has("debug");
 
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
     if (DEBUG_MODE) {
       document.body.insertAdjacentHTML("afterbegin",
         `<div style="margin:16px;padding:12px;background:#EEF6F1;border:1px solid #CFE3D6;border-radius:8px;font-size:12px;color:#1d5c3d;">
@@ -433,16 +491,107 @@
     sessionStorage.removeItem("hd_bounced_from_app");
     currentUser = user;
     document.getElementById("userEmail").textContent = user.email;
-    document.getElementById("todayLabel").textContent = todayStr();
-    document.getElementById("dashDateLabel").textContent = todayStr();
-    loadTodayIfExists();
-    loadDashboard();
+    await loadProfile();
+    initDateNav();
+    loadForDate(selectedDateStr);
   });
 
   document.getElementById("logoutBtn").addEventListener("click", async () => {
     await signOut(auth);
     window.location.href = "index.html";
   });
+
+  // ---- 마이페이지: 개인 프로필 ----
+  async function loadProfile(){
+    try {
+      const ref = doc(db, "profile", "main");
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const p = snap.data();
+        if (p.birthYear) BIRTH_YEAR = p.birthYear;
+        if (p.height) HEIGHT_CM = p.height;
+        document.getElementById("profile-name").value = p.name || "";
+        document.getElementById("profile-birthyear").value = p.birthYear || "";
+        document.getElementById("profile-height").value = p.height || "";
+      } else {
+        document.getElementById("profile-birthyear").value = BIRTH_YEAR;
+        document.getElementById("profile-height").value = HEIGHT_CM;
+      }
+    } catch(err){ console.error("프로필 로드 실패", err); }
+  }
+
+  window.saveProfile = async function(){
+    const btn = document.getElementById("profileSaveBtn");
+    btn.disabled = true;
+    btn.textContent = "저장 중...";
+    const birthYear = Number(document.getElementById("profile-birthyear").value) || BIRTH_YEAR;
+    const height = Number(document.getElementById("profile-height").value) || HEIGHT_CM;
+    try {
+      await setDoc(doc(db, "profile", "main"), {
+        name: document.getElementById("profile-name").value.trim(),
+        birthYear, height, updatedAt: serverTimestamp()
+      }, { merge: true });
+      BIRTH_YEAR = birthYear;
+      HEIGHT_CM = height;
+      btn.textContent = "저장 완료 ✓";
+      setTimeout(()=>{ btn.textContent = "저장"; btn.disabled = false; }, 1500);
+    } catch(err){
+      console.error(err);
+      btn.textContent = "저장 실패 — 다시 시도";
+      btn.disabled = false;
+    }
+  };
+
+  // ---- 날짜 네비게이션 ----
+  function initDateNav(){
+    document.getElementById("dateInput").value = selectedDateStr;
+    updateDateDisplay();
+  }
+  function updateDateDisplay(){
+    const isToday = selectedDateStr === todayStr();
+    const d = new Date(selectedDateStr + "T00:00:00");
+    const label = `${d.getMonth()+1}.${d.getDate()} (${["일","월","화","수","목","금","토"][d.getDay()]})`;
+    document.getElementById("dateDisplay").innerHTML = label + (isToday ? `<span class="today-badge">오늘</span>` : `<span class="past-badge">과거</span>`);
+    document.getElementById("dashDateLabel").textContent = selectedDateStr;
+    document.getElementById("submitBtn").textContent = isToday ? "오늘 기록 마감하기" : "이 날짜 기록 저장하기";
+  }
+  window.changeDate = function(delta){
+    const d = new Date(selectedDateStr + "T00:00:00");
+    d.setDate(d.getDate()+delta);
+    selectedDateStr = dateToStr(d);
+    document.getElementById("dateInput").value = selectedDateStr;
+    updateDateDisplay();
+    loadForDate(selectedDateStr);
+  };
+  window.onDatePicked = function(){
+    selectedDateStr = document.getElementById("dateInput").value;
+    updateDateDisplay();
+    loadForDate(selectedDateStr);
+  };
+
+  function resetInputForm(){
+    document.getElementById("input-steps").value = "";
+    document.querySelectorAll("#levelRow .level-opt").forEach(o=>o.classList.remove("selected"));
+    selectedLevel = null;
+    document.querySelectorAll("#workTypeChips .chip").forEach(c=>c.classList.remove("selected"));
+    selectedWorkTypes.clear();
+    ["breakfast","lunch","dinner","snack"].forEach(m=>{
+      mealSelections[m] = {};
+      document.querySelectorAll(`#cat-${m} .cat-chip`).forEach(c=>c.classList.remove("selected"));
+      computeMealKcal(m);
+    });
+    ["input-weight","input-bodyfat","input-muscle","input-fatmass","input-visceral"].forEach(id=>{
+      document.getElementById(id).value = "";
+    });
+  }
+
+  async function loadForDate(dateStr){
+    resetInputForm();
+    const ref = doc(db, "dailyLogs", dateStr);
+    const snap = await getDoc(ref);
+    if (snap.exists()) applyLogData(snap.data());
+    updateCardStates();
+  }
 
   // ---- 아코디언 ----
   window.toggleCard = function(headerEl){
@@ -452,8 +601,9 @@
   window.showScreen = function(name){
     document.getElementById("screen-input").classList.toggle("active", name==="input");
     document.getElementById("screen-dashboard").classList.toggle("active", name==="dashboard");
+    document.getElementById("screen-mypage").classList.toggle("active", name==="mypage");
     document.querySelectorAll(".nav-item").forEach((el,i)=>{
-      el.classList.toggle("active", (name==="input"&&i===0)||(name==="dashboard"&&i===1));
+      el.classList.toggle("active", (name==="input"&&i===0)||(name==="dashboard"&&i===1)||(name==="mypage"&&i===2));
     });
     if (name==="dashboard") loadDashboard();
   };
@@ -558,12 +708,13 @@
     };
 
     try {
-      const ref = doc(db, "dailyLogs", todayStr());
+      const ref = doc(db, "dailyLogs", selectedDateStr);
       const existing = await getDoc(ref);
       if (!existing.exists()) data.createdAt = serverTimestamp();
       await setDoc(ref, data, { merge: true });
       btn.textContent = "저장 완료 ✓";
-      setTimeout(()=>{ btn.textContent = "오늘 기록 마감하기"; btn.disabled = false; }, 1500);
+      const isToday = selectedDateStr === todayStr();
+      setTimeout(()=>{ btn.textContent = isToday ? "오늘 기록 마감하기" : "이 날짜 기록 저장하기"; btn.disabled = false; }, 1500);
       loadDashboard();
     } catch (err) {
       console.error(err);
@@ -573,11 +724,7 @@
   };
 
   // ---- 오늘 기록 불러와서 입력폼 채우기 (이미 입력했으면 이어서 수정) ----
-  async function loadTodayIfExists(){
-    const ref = doc(db, "dailyLogs", todayStr());
-    const snap = await getDoc(ref);
-    if (!snap.exists()) return;
-    const d = snap.data();
+  function applyLogData(d){
     if (d.steps) document.getElementById("input-steps").value = d.steps;
     if (d.intensityLevel) {
       const opt = document.querySelector(`.level-opt[data-level="${d.intensityLevel}"]`);
@@ -625,7 +772,7 @@
       return;
     }
 
-    const today = logs.find(l => l.id === todayStr()) || logs[logs.length-1];
+    const today = logs.find(l => l.id === selectedDateStr) || logs[logs.length-1];
     const totalKcal = today.meals ? Object.values(today.meals).reduce((s,m)=>s+(m.kcal||0),0) : 0;
     const weightForBMR = today.weight || [...logs].reverse().find(l=>l.weight)?.weight || 67;
     const bmr = calcBMR(weightForBMR);
