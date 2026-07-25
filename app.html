@@ -175,23 +175,25 @@
 
     <div class="card" id="card-intensity" data-acc>
       <div class="acc-header" onclick="toggleCard(this)">
-        <div class="acc-header-left"><span class="acc-dot"></span><span class="acc-title">작업 강도</span></div>
+        <div class="acc-header-left"><span class="acc-dot"></span><span class="acc-title" id="intensityCardTitle">오늘 유형</span></div>
         <div class="acc-right"><span class="acc-preview" id="preview-intensity">미입력</span><span class="acc-chevron"></span></div>
       </div>
       <div class="acc-body">
-        <label class="field-title" style="margin-top:0;">체감 강도</label>
-        <div class="level-row" id="levelRow">
-          <div class="level-opt" data-level="1" data-bonus="60"><span class="lv-num">1</span><span class="lv-label">매우 여유</span></div>
-          <div class="level-opt" data-level="2" data-bonus="120"><span class="lv-num">2</span><span class="lv-label">여유</span></div>
-          <div class="level-opt" data-level="3" data-bonus="180"><span class="lv-num">3</span><span class="lv-label">보통</span></div>
-          <div class="level-opt" data-level="4" data-bonus="260"><span class="lv-num">4</span><span class="lv-label">힘듦</span></div>
-          <div class="level-opt" data-level="5" data-bonus="350"><span class="lv-num">5</span><span class="lv-label">매우 힘듦</span></div>
-        </div>
-
-        <label class="field-title">근무 여부</label>
+        <label class="field-title" style="margin-top:0;">근무일 · 휴무일</label>
         <div class="chip-row" id="dayTypeToggle">
           <div class="chip" data-value="work">근무일</div>
           <div class="chip" data-value="rest">휴무일</div>
+        </div>
+
+        <div id="levelSection">
+          <label class="field-title">체감 강도</label>
+          <div class="level-row" id="levelRow">
+            <div class="level-opt" data-level="1" data-bonus="60"><span class="lv-num">1</span><span class="lv-label">매우 여유</span></div>
+            <div class="level-opt" data-level="2" data-bonus="120"><span class="lv-num">2</span><span class="lv-label">여유</span></div>
+            <div class="level-opt" data-level="3" data-bonus="180"><span class="lv-num">3</span><span class="lv-label">보통</span></div>
+            <div class="level-opt" data-level="4" data-bonus="260"><span class="lv-num">4</span><span class="lv-label">힘듦</span></div>
+            <div class="level-opt" data-level="5" data-bonus="350"><span class="lv-num">5</span><span class="lv-label">매우 힘듦</span></div>
+          </div>
         </div>
 
         <label class="field-title" id="workTypeTitle">작업 유형 (중복 선택 가능)</label>
@@ -629,6 +631,8 @@
 
   function renderWorkTypeChips(){
     const opts = selectedDayType === 'rest' ? REST_TYPE_OPTIONS : WORK_TYPE_OPTIONS;
+    document.getElementById('intensityCardTitle').textContent = selectedDayType === 'rest' ? '휴무 활동' : '작업 강도';
+    document.getElementById('levelSection').style.display = selectedDayType === 'rest' ? 'none' : 'block';
     document.getElementById('workTypeTitle').textContent = selectedDayType === 'rest' ? '휴무 활동 (중복 선택 가능)' : '작업 유형 (중복 선택 가능)';
     document.getElementById('workTypeChips').innerHTML = opts.map(v =>
       `<div class="chip multi" data-value="${v}">${v}</div>`
@@ -643,6 +647,10 @@
     chip.classList.add("selected");
     selectedDayType = chip.dataset.value;
     selectedWorkTypes.clear();
+    if (selectedDayType === 'rest') {
+      document.querySelectorAll("#levelRow .level-opt").forEach(o=>o.classList.remove("selected"));
+      selectedLevel = null;
+    }
     renderWorkTypeChips();
     updateCardStates();
   });
@@ -896,10 +904,6 @@
           <div class="analysis-line">
             <div class="tag">총평</div>
             <div class="body"><span class="status-dot ${balance<-600?'bad':balance<-300?'warn':'ok'}"></span>${balanceNote}</div>
-          </div>
-          <div class="analysis-line">
-            <div class="tag">신장</div>
-            <div class="body"><span class="status-dot warn"></span>단백뇨 소견 고려 — 단백질 섭취는 <b>담당 의사와 상담 기준</b>으로 조정</div>
           </div>
         </div>
       </div>
