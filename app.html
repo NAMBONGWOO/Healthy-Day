@@ -367,9 +367,15 @@
       {key:'none',label:'없음',kcal:0},{key:'light',label:'소량(반공기)',kcal:140},
       {key:'normal',label:'보통(1공기)',kcal:280},{key:'much',label:'많음(1.5공기+)',kcal:400}
     ]},
-    { id:'protein', title:'단백질 반찬', options:[
-      {key:'none',label:'없음',kcal:0},{key:'light',label:'가벼움(계란·두부)',kcal:100},
-      {key:'normal',label:'보통(고기·생선 소량)',kcal:180},{key:'much',label:'많음(넉넉히)',kcal:280}
+    { id:'protein', title:'단백질 (먹은 걸 다 눌러주세요)', multi:true, options:[
+      {key:'lowfat',label:'닭가슴살·두부·흰살생선',kcal:120},
+      {key:'meat',label:'돼지·소고기 일반',kcal:180},
+      {key:'highfat',label:'양고기·삼겹살·연어 등(고지방)',kcal:320},
+      {key:'seafood',label:'해산물(새우·오징어 등)',kcal:150},
+      {key:'egg',label:'계란',kcal:100}
+    ]},
+    { id:'fat', title:'지방·오일', options:[
+      {key:'none',label:'없음',kcal:0},{key:'light',label:'조금',kcal:100},{key:'much',label:'많음',kcal:200}
     ]},
     { id:'soup', title:'국·찌개', options:[
       {key:'none',label:'안 먹음',kcal:0},{key:'light',label:'건더기 위주',kcal:100},{key:'normal',label:'국물까지',kcal:180}
@@ -387,9 +393,15 @@
         {key:'none',label:'없음',kcal:0},{key:'light',label:'가벼움',kcal:100},
         {key:'normal',label:'보통',kcal:200},{key:'much',label:'많음',kcal:320}
       ]},
-      { id:'protein', title:'단백질 (계란·요거트·견과류 등)', options:[
-        {key:'none',label:'없음',kcal:0},{key:'light',label:'조금',kcal:70},
-        {key:'normal',label:'보통',kcal:140},{key:'much',label:'많음',kcal:220}
+      { id:'protein', title:'단백질 (먹은 걸 다 눌러주세요)', multi:true, options:[
+        {key:'egg',label:'계란(1~2개)',kcal:150},
+        {key:'yogurt',label:'그릭요거트(무가당)',kcal:100},
+        {key:'nuts',label:'견과류(한 줌)',kcal:150},
+        {key:'milk',label:'두유·우유(1잔)',kcal:90},
+        {key:'cheese',label:'치즈(1장)',kcal:80}
+      ]},
+      { id:'fat', title:'지방·오일', options:[
+        {key:'none',label:'없음',kcal:0},{key:'light',label:'드레싱·오일 조금',kcal:120},{key:'much',label:'드레싱·오일 많음',kcal:240}
       ]},
       { id:'fruit', title:'과일·채소', options:[
         {key:'none',label:'없음',kcal:0},{key:'light',label:'조금',kcal:40},{key:'normal',label:'보통',kcal:80}
@@ -398,7 +410,7 @@
     lunch: LUNCH_DINNER_CATS,
     dinner: LUNCH_DINNER_CATS,
     snack: [
-      { id:'type', title:'유형', options:[
+      { id:'type', title:'유형', multi:true, options:[
         {key:'fruit',label:'과일',kcal:60},{key:'nuts',label:'견과류',kcal:150},
         {key:'drink',label:'커피/음료',kcal:60},{key:'bread',label:'빵·과자류',kcal:200},{key:'none',label:'없음',kcal:0}
       ]},
@@ -414,7 +426,7 @@
     const groups = MEAL_CATEGORIES[mealKey];
     container.innerHTML = groups.map(g => `
       <div class="cat-group" data-group="${g.id}">
-        <div class="cat-title">${g.title}</div>
+        <div class="cat-title">${g.title}${g.multi ? ' <span style="font-weight:400;color:var(--text-dim);font-size:10.5px;">(중복 선택 가능)</span>' : ''}</div>
         <div class="chip-row">
           ${g.options.map(o => `<div class="cat-chip" data-key="${o.key}" data-kcal="${o.kcal ?? ''}" data-mult="${o.mult ?? ''}">${o.label}</div>`).join('')}
         </div>
@@ -426,21 +438,21 @@
   function computeMealKcal(mealKey){
     const sel = mealSelections[mealKey];
     const groups = MEAL_CATEGORIES[mealKey];
-    let kcal;
-    if (mealKey === 'snack'){
-      const typeOpt = groups[0].options.find(o=>o.key===sel.type);
-      const amtOpt = groups[1].options.find(o=>o.key===sel.amount);
-      const base = typeOpt ? typeOpt.kcal : 0;
-      const mult = amtOpt ? amtOpt.mult : 1;
-      kcal = Math.round(base * mult);
-    } else {
-      kcal = groups.reduce((sum,g)=>{
-        const opt = g.options.find(o=>o.key===sel[g.id]);
-        return sum + (opt ? opt.kcal : 0);
-      }, 0);
-    }
-    document.getElementById(`kcal-${mealKey}`).textContent = `${kcal} kcal`;
-    return kcal;
+    let kcal = 0;
+    let multiplier = 1;
+    groups.forEach(g=>{
+      const val = sel[g.id];
+      const keys = g.multi ? (Array.isArray(val) ? val : (val ? [val] : [])) : (val ? [val] : []);
+      keys.forEach(key=>{
+        const opt = g.options.find(o=>o.key===key);
+        if (!opt) return;
+        if (opt.mult !== undefined) multiplier *= opt.mult;
+        else kcal += (opt.kcal || 0);
+      });
+    });
+    const total = Math.round(kcal * multiplier);
+    document.getElementById(`kcal-${mealKey}`).textContent = `${total} kcal`;
+    return total;
   }
 
   document.querySelectorAll('.cat-container').forEach(container => {
@@ -449,9 +461,17 @@
       if (!chip) return;
       const group = chip.closest('.cat-group');
       const mealKey = container.id.replace('cat-','');
-      group.querySelectorAll('.cat-chip').forEach(c=>c.classList.remove('selected'));
-      chip.classList.add('selected');
-      mealSelections[mealKey][group.dataset.group] = chip.dataset.key;
+      const groupConfig = MEAL_CATEGORIES[mealKey].find(g=>g.id===group.dataset.group);
+      if (groupConfig && groupConfig.multi){
+        chip.classList.toggle('selected');
+        let arr = Array.isArray(mealSelections[mealKey][group.dataset.group]) ? mealSelections[mealKey][group.dataset.group] : [];
+        arr = chip.classList.contains('selected') ? [...arr, chip.dataset.key] : arr.filter(k=>k!==chip.dataset.key);
+        mealSelections[mealKey][group.dataset.group] = arr;
+      } else {
+        group.querySelectorAll('.cat-chip').forEach(c=>c.classList.remove('selected'));
+        chip.classList.add('selected');
+        mealSelections[mealKey][group.dataset.group] = chip.dataset.key;
+      }
       computeMealKcal(mealKey);
       updateCardStates();
     });
@@ -785,10 +805,13 @@
       Object.keys(d.meals).forEach(m=>{
         const selections = d.meals[m].selections || {};
         Object.keys(selections).forEach(groupId=>{
-          const key = selections[groupId];
-          const chip = document.querySelector(`#cat-${m} .cat-group[data-group="${groupId}"] .cat-chip[data-key="${key}"]`);
-          if (chip) chip.classList.add("selected");
-          mealSelections[m][groupId] = key;
+          const val = selections[groupId];
+          const keys = Array.isArray(val) ? val : [val];
+          keys.forEach(key=>{
+            const chip = document.querySelector(`#cat-${m} .cat-group[data-group="${groupId}"] .cat-chip[data-key="${key}"]`);
+            if (chip) chip.classList.add("selected");
+          });
+          mealSelections[m][groupId] = val;
         });
         computeMealKcal(m);
       });
