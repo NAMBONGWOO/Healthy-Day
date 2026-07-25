@@ -879,6 +879,34 @@
       }).join(" ");
     }
 
+    // ---- 주간 밸런스 계산 (최근 7일 기록) ----
+    let carryWeight = 67;
+    const balanceSeries = logs.map(l=>{
+      if (l.weight) carryWeight = l.weight;
+      const dayKcal = l.meals ? Object.values(l.meals).reduce((s,m)=>s+(m.kcal||0),0) : 0;
+      const dayBmr = calcBMR(carryWeight);
+      const dayActivity = Math.round((l.steps||0) * STEP_KCAL);
+      const dayTdee = dayBmr + dayActivity + (l.intensityBonus||0);
+      return { date: l.id, balance: dayKcal - dayTdee };
+    });
+    const last7 = balanceSeries.slice(-7);
+    let weeklyBars = "";
+    if (last7.length){
+      const maxAbs = Math.max(800, ...last7.map(d=>Math.abs(d.balance)));
+      const barW = 300/last7.length;
+      const midY = 45;
+      weeklyBars = last7.map((d,i)=>{
+        const h = Math.min(38, (Math.abs(d.balance)/maxAbs)*38);
+        const x = i*barW + barW*0.2;
+        const w = barW*0.6;
+        const color = d.balance < -600 ? "#C4483C" : d.balance < -300 ? "#C67A1E" : d.balance < 200 ? "#2E9563" : "#C67A1E";
+        const y = d.balance >= 0 ? midY - h : midY;
+        const label = d.date.slice(5).replace('-','.');
+        return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${color}"/>
+                <text x="${(x+w/2).toFixed(1)}" y="70" font-family="IBM Plex Mono" font-size="8" fill="#A6A296" text-anchor="middle">${label}</text>`;
+      }).join("");
+    }
+
     const bmi = today.weight ? (today.weight / ((HEIGHT_CM/100)**2)).toFixed(1) : null;
     let bodyCompNote = "체성분 데이터가 아직 없어요";
     if (today.bodyFat != null) {
@@ -911,6 +939,14 @@
           <div class="stat-box"><div class="k">기초대사량</div><div class="v">${bmr} <span style="font-size:10px;color:var(--text-dim)">kcal</span></div></div>
           <div class="stat-box"><div class="k">활동+근무 보정</div><div class="v">${activityKcal + (today.intensityBonus||0)} <span style="font-size:10px;color:var(--text-dim)">kcal</span></div></div>
         </div>
+        ${last7.length > 1 ? `
+        <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--line);">
+          <div style="font-family:var(--mono); font-size:10px; color:var(--text-dim); margin-bottom:6px;">주간 밸런스 추이</div>
+          <svg viewBox="0 0 340 78" style="width:100%;">
+            <line x1="0" y1="45" x2="340" y2="45" stroke="#E6E2D8" stroke-width="1"/>
+            ${weeklyBars}
+          </svg>
+        </div>` : ''}
       </div>
 
       <div class="card open">
