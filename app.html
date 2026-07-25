@@ -188,14 +188,14 @@
           <div class="level-opt" data-level="5" data-bonus="350"><span class="lv-num">5</span><span class="lv-label">매우 힘듦</span></div>
         </div>
 
-        <label class="field-title">작업 유형 (중복 선택 가능)</label>
-        <div class="chip-row" id="workTypeChips">
-          <div class="chip multi" data-value="정상 생산">정상 생산</div>
-          <div class="chip multi" data-value="샘플 작업">샘플 작업</div>
-          <div class="chip multi" data-value="신규 제품 생산">신규 제품 생산</div>
-          <div class="chip multi" data-value="불량 조치">불량 조치</div>
-          <div class="chip multi" data-value="기타 이슈">기타 이슈</div>
+        <label class="field-title">근무 여부</label>
+        <div class="chip-row" id="dayTypeToggle">
+          <div class="chip" data-value="work">근무일</div>
+          <div class="chip" data-value="rest">휴무일</div>
         </div>
+
+        <label class="field-title" id="workTypeTitle">작업 유형 (중복 선택 가능)</label>
+        <div class="chip-row" id="workTypeChips"></div>
       </div>
     </div>
 
@@ -269,10 +269,9 @@
 
   <!-- ===================== DASHBOARD ===================== -->
   <div class="screen" id="screen-dashboard">
-    <div class="header" style="border:none; padding:8px 0 16px;">
-      <div class="eyebrow">분석 리포트</div>
-      <h1>오늘의 밸런스</h1>
-      <div class="date" id="dashDateLabel">—</div>
+    <div class="header" style="border:none; padding:16px 0 12px; text-align:center;">
+      <div class="app-title" style="font-size:18px;">분석 리포트</div>
+      <div class="date" id="dashDateLabel" style="margin-top:5px;">—</div>
     </div>
 
     <div id="dashContent">
@@ -570,10 +569,13 @@
   };
 
   function resetInputForm(){
+    document.querySelectorAll("#screen-input .card").forEach(c=>c.classList.remove("open"));
     document.getElementById("input-steps").value = "";
     document.querySelectorAll("#levelRow .level-opt").forEach(o=>o.classList.remove("selected"));
     selectedLevel = null;
-    document.querySelectorAll("#workTypeChips .chip").forEach(c=>c.classList.remove("selected"));
+    document.querySelectorAll("#dayTypeToggle .chip").forEach(c=>c.classList.remove("selected"));
+    selectedDayType = 'work';
+    renderWorkTypeChips();
     selectedWorkTypes.clear();
     ["breakfast","lunch","dinner","snack"].forEach(m=>{
       mealSelections[m] = {};
@@ -619,8 +621,32 @@
     updateCardStates();
   });
 
-  // ---- 작업 유형(중복선택) ----
+  // ---- 근무일/휴무일 → 작업 유형(중복선택) 동적 전환 ----
+  const WORK_TYPE_OPTIONS = ['정상 생산','샘플 작업','신규 제품 생산','불량 조치','기타 이슈'];
+  const REST_TYPE_OPTIONS = ['집안일','외출·나들이','운동','휴식 위주','기타'];
+  let selectedDayType = 'work';
   const selectedWorkTypes = new Set();
+
+  function renderWorkTypeChips(){
+    const opts = selectedDayType === 'rest' ? REST_TYPE_OPTIONS : WORK_TYPE_OPTIONS;
+    document.getElementById('workTypeTitle').textContent = selectedDayType === 'rest' ? '휴무 활동 (중복 선택 가능)' : '작업 유형 (중복 선택 가능)';
+    document.getElementById('workTypeChips').innerHTML = opts.map(v =>
+      `<div class="chip multi" data-value="${v}">${v}</div>`
+    ).join('');
+  }
+  renderWorkTypeChips();
+
+  document.getElementById("dayTypeToggle").addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
+    document.querySelectorAll("#dayTypeToggle .chip").forEach(c=>c.classList.remove("selected"));
+    chip.classList.add("selected");
+    selectedDayType = chip.dataset.value;
+    selectedWorkTypes.clear();
+    renderWorkTypeChips();
+    updateCardStates();
+  });
+
   document.getElementById("workTypeChips").addEventListener("click", (e) => {
     const chip = e.target.closest(".chip.multi");
     if (!chip) return;
@@ -698,6 +724,7 @@
       intensityLevel: selectedLevel ? selectedLevel.level : null,
       intensityBonus: selectedLevel ? selectedLevel.bonus : 0,
       workTypes: [...selectedWorkTypes],
+      dayType: selectedDayType,
       meals,
       weight: Number(document.getElementById("input-weight").value) || null,
       bodyFat: Number(document.getElementById("input-bodyfat").value) || null,
@@ -733,9 +760,16 @@
         selectedLevel = { level: d.intensityLevel, bonus: d.intensityBonus||0, label: opt.querySelector(".lv-label").textContent };
       }
     }
+    if (d.dayType) {
+      selectedDayType = d.dayType;
+      document.querySelectorAll("#dayTypeToggle .chip").forEach(c=>{
+        c.classList.toggle("selected", c.dataset.value === d.dayType);
+      });
+      renderWorkTypeChips();
+    }
     if (d.workTypes) {
       d.workTypes.forEach(v=>{
-        const chip = document.querySelector(`.chip.multi[data-value="${v}"]`);
+        const chip = document.querySelector(`#workTypeChips .chip.multi[data-value="${v}"]`);
         if (chip) { chip.classList.add("selected"); selectedWorkTypes.add(v); }
       });
     }
@@ -791,6 +825,17 @@
     const lastW = weightLogs[weightLogs.length-1]?.weight;
     const delta = (firstW && lastW) ? (lastW - firstW).toFixed(1) : null;
 
+    function trendFor(field, digits){
+      const arr = logs.filter(l => l[field] != null);
+      if (!arr.length) return null;
+      const first = arr[0][field], last = arr[arr.length-1][field];
+      const d = (last - first).toFixed(digits);
+      return { last: last.toFixed(digits), delta: d, count: arr.length };
+    }
+    const bodyFatTrend = trendFor('bodyFat', 1);
+    const muscleTrend = trendFor('muscleMass', 2);
+    const visceralTrend = trendFor('visceralFat', 0);
+
     let svgPoints = "";
     if (weightLogs.length >= 2) {
       const ws = weightLogs.map(l=>l.weight);
@@ -803,8 +848,24 @@
       }).join(" ");
     }
 
+    const bmi = today.weight ? (today.weight / ((HEIGHT_CM/100)**2)).toFixed(1) : null;
+    let bodyCompNote = "체성분 데이터가 아직 없어요";
+    if (today.bodyFat != null) {
+      const bf = today.bodyFat;
+      const bfNote = bf < 18 ? "탄탄한 체성분을 유지하고 있어요" : bf < 24 ? "무난한 체성분 상태예요" : "체지방 비중이 다소 높은 편이에요";
+      bodyCompNote = `체지방률 <b>${bf}%</b>${today.muscleMass ? `, 골격근량 <b>${today.muscleMass}kg</b>` : ""}${bmi ? ` (BMI ${bmi})` : ""} — ${bfNote}`;
+    }
+    const activityNote = today.dayType === 'rest'
+      ? `<b>휴무일</b> · ${(today.workTypes&&today.workTypes.length)?today.workTypes.join(", "):"특별한 활동 없음"} (${today.steps||0}보)`
+      : `<b>근무일</b> · 체감 강도 Lv${today.intensityLevel||"—"} · ${(today.workTypes&&today.workTypes.length)?today.workTypes.join(", "):"미입력"} (${today.steps||0}보)`;
+    const balanceNote = balance < -600 ? "활동량 대비 섭취가 많이 부족한 편이에요"
+      : balance < -300 ? "활동량 대비 섭취가 다소 부족한 편이에요"
+      : balance < 200 ? "활동량과 섭취가 균형 잡힌 편이에요"
+      : "섭취가 활동량보다 다소 많은 편이에요";
+
     container.innerHTML = `
       <div class="gauge-card">
+        <div class="acc-header" style="padding:0 0 14px;"><div class="acc-header-left"><span class="acc-title" style="color:var(--text)">오늘의 밸런스</span></div></div>
         <div class="gauge-wrap">
           <div class="gauge-num">
             <div class="big" style="color:${balanceColor}">${balance>=0?"+":""}${balance}</div>
@@ -825,12 +886,16 @@
         <div class="acc-header"><div class="acc-header-left"><span class="acc-title" style="color:var(--text)">종합 분석</span></div></div>
         <div class="acc-body" style="max-height:600px; padding:0 18px 18px;">
           <div class="analysis-line">
-            <div class="tag">밸런스</div>
-            <div class="body"><span class="status-dot ${balance<-600?'bad':balance<-300?'warn':'ok'}"></span>오늘 밸런스는 <b>${balance>=0?"+":""}${balance}kcal</b> 입니다</div>
+            <div class="tag">체성분</div>
+            <div class="body"><span class="status-dot ok"></span>${bodyCompNote}</div>
           </div>
           <div class="analysis-line">
-            <div class="tag">작업강도</div>
-            <div class="body">체감 강도 <b>Lv${today.intensityLevel||"—"}</b> · ${(today.workTypes&&today.workTypes.length)?today.workTypes.join(", "):"미입력"} (${today.steps||0}보)</div>
+            <div class="tag">활동</div>
+            <div class="body">${activityNote}</div>
+          </div>
+          <div class="analysis-line">
+            <div class="tag">총평</div>
+            <div class="body"><span class="status-dot ${balance<-600?'bad':balance<-300?'warn':'ok'}"></span>${balanceNote}</div>
           </div>
           <div class="analysis-line">
             <div class="tag">신장</div>
@@ -853,6 +918,13 @@
             <polyline points="${svgPoints}" fill="none" stroke="#C67A1E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>` : `<div class="empty-state">추이를 보려면 2회 이상 기록이 필요해요</div>`}
           ` : `<div class="empty-state">체중 기록이 아직 없어요</div>`}
+
+          ${(bodyFatTrend || muscleTrend || visceralTrend) ? `
+          <div class="stat-grid" style="margin-top:14px;">
+            ${bodyFatTrend ? `<div class="stat-box"><div class="k">체지방률</div><div class="v">${bodyFatTrend.last}% <span style="font-size:10px;color:${bodyFatTrend.delta<0?'var(--green)':'var(--amber)'}">${bodyFatTrend.delta<0?"▼":"▲"}${Math.abs(bodyFatTrend.delta)}</span></div></div>` : ''}
+            ${muscleTrend ? `<div class="stat-box"><div class="k">골격근량</div><div class="v">${muscleTrend.last}kg <span style="font-size:10px;color:${muscleTrend.delta>=0?'var(--green)':'var(--amber)'}">${muscleTrend.delta>=0?"▲":"▼"}${Math.abs(muscleTrend.delta)}</span></div></div>` : ''}
+            ${visceralTrend ? `<div class="stat-box"><div class="k">내장지방지수</div><div class="v">${visceralTrend.last} <span style="font-size:10px;color:${visceralTrend.delta<=0?'var(--green)':'var(--amber)'}">${visceralTrend.delta<=0?"▼":"▲"}${Math.abs(visceralTrend.delta)}</span></div></div>` : ''}
+          </div>` : ''}
         </div>
       </div>
     `;
