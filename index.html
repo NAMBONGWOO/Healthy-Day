@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Healthy Day — 로그인</title>
+<link rel="apple-touch-icon" href="icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -87,8 +88,19 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
 
+  const DEBUG_MODE = new URLSearchParams(window.location.search).has("debug");
+
   // 이미 로그인되어 있으면 바로 앱으로 이동 (단, 루프 감지 시 중단)
   onAuthStateChanged(auth, (user) => {
+    if (DEBUG_MODE) {
+      document.querySelector(".card").insertAdjacentHTML("beforeend",
+        `<div style="margin-top:16px;padding:12px;background:#EEF6F1;border:1px solid #CFE3D6;border-radius:8px;font-size:12px;color:#1d5c3d;">
+           [DEBUG] index.html 상태<br>
+           user: ${user ? user.email : "null (로그인 안됨)"}<br>
+           uid: ${user ? user.uid : "-"}
+         </div>`);
+      return; // 디버그 모드에서는 리다이렉트 안 함
+    }
     if (user) {
       if (sessionStorage.getItem("hd_bounced_from_app")) {
         // app.html에서 이미 한 번 튕겨져 온 상태 — 루프 발생, 중단하고 진단 표시
