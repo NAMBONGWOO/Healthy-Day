@@ -88,6 +88,14 @@
   .meal-block{ display:none; }
   .meal-block.active{ display:block; }
 
+  .toggle-row{ display:flex; background:var(--surface-2); border-radius:9px; padding:2px; border:1px solid var(--line); }
+  .toggle-opt{ padding:6px 10px; font-size:10.5px; font-weight:600; color:var(--text-dim); border-radius:7px; cursor:pointer; }
+  .toggle-opt.active{ background:var(--surface); color:var(--amber); }
+
+  .photo-drop{ display:flex; align-items:center; justify-content:center; border:1.5px dashed var(--line); border-radius:10px; padding:18px; background:var(--surface-2); cursor:pointer; font-size:12.5px; color:var(--text-muted); }
+  .photo-drop input[type=file]{ display:none; }
+  .photo-thumb{ width:100%; max-height:170px; object-fit:cover; border-radius:10px; margin-top:10px; display:block; }
+
   .submit-btn{ width:100%; padding:16px; background:var(--amber); color:#FFF; font-weight:700; font-size:14.5px; border:none; border-radius:12px; margin-top:6px; cursor:pointer; }
   .submit-btn:disabled{ opacity:.5; cursor:not-allowed; }
   .submit-hint{ text-align:center; font-family:var(--mono); font-size:10.5px; color:var(--text-dim); margin-top:10px; }
@@ -209,7 +217,13 @@
     <div class="card" id="card-meals" data-acc>
       <div class="acc-header" onclick="toggleCard(this)">
         <div class="acc-header-left"><span class="acc-dot"></span><span class="acc-title">칼로리 섭취</span></div>
-        <div class="acc-right"><span class="acc-preview" id="preview-meals">미입력</span><span class="acc-chevron"></span></div>
+        <div class="acc-right">
+          <div class="toggle-row" id="mealModeToggle" onclick="event.stopPropagation()" style="margin-bottom:0;">
+            <div class="toggle-opt active" data-mode="category">직접입력</div>
+            <div class="toggle-opt" data-mode="photo">사진</div>
+          </div>
+          <span class="acc-preview" id="preview-meals">미입력</span><span class="acc-chevron"></span>
+        </div>
       </div>
       <div class="acc-body">
         <div class="meal-tabs" id="mealTabs">
@@ -220,18 +234,54 @@
         </div>
         <div class="meal-block active" data-meal="breakfast">
           <div class="cat-container" id="cat-breakfast"></div>
+          <div class="photo-input" id="photo-breakfast" style="display:none">
+            <label class="photo-drop" for="photo-file-breakfast">
+              <input type="file" accept="image/*" id="photo-file-breakfast" onchange="onPhotoSelected('breakfast', this)">
+              <span id="photo-drop-label-breakfast">📷 사진 선택 / 촬영</span>
+            </label>
+            <img class="photo-thumb" id="photo-thumb-breakfast" style="display:none">
+            <label class="field-title">추정 칼로리 직접 입력 (kcal)</label>
+            <input type="number" id="photo-kcal-breakfast" oninput="onFieldChange()" placeholder="0">
+          </div>
           <div class="kcal-readout"><span class="lbl">추정 칼로리</span><span id="kcal-breakfast">0 kcal</span></div>
         </div>
         <div class="meal-block" data-meal="lunch">
           <div class="cat-container" id="cat-lunch"></div>
+          <div class="photo-input" id="photo-lunch" style="display:none">
+            <label class="photo-drop" for="photo-file-lunch">
+              <input type="file" accept="image/*" id="photo-file-lunch" onchange="onPhotoSelected('lunch', this)">
+              <span id="photo-drop-label-lunch">📷 사진 선택 / 촬영</span>
+            </label>
+            <img class="photo-thumb" id="photo-thumb-lunch" style="display:none">
+            <label class="field-title">추정 칼로리 직접 입력 (kcal)</label>
+            <input type="number" id="photo-kcal-lunch" oninput="onFieldChange()" placeholder="0">
+          </div>
           <div class="kcal-readout"><span class="lbl">추정 칼로리</span><span id="kcal-lunch">0 kcal</span></div>
         </div>
         <div class="meal-block" data-meal="dinner">
           <div class="cat-container" id="cat-dinner"></div>
+          <div class="photo-input" id="photo-dinner" style="display:none">
+            <label class="photo-drop" for="photo-file-dinner">
+              <input type="file" accept="image/*" id="photo-file-dinner" onchange="onPhotoSelected('dinner', this)">
+              <span id="photo-drop-label-dinner">📷 사진 선택 / 촬영</span>
+            </label>
+            <img class="photo-thumb" id="photo-thumb-dinner" style="display:none">
+            <label class="field-title">추정 칼로리 직접 입력 (kcal)</label>
+            <input type="number" id="photo-kcal-dinner" oninput="onFieldChange()" placeholder="0">
+          </div>
           <div class="kcal-readout"><span class="lbl">추정 칼로리</span><span id="kcal-dinner">0 kcal</span></div>
         </div>
         <div class="meal-block" data-meal="snack">
           <div class="cat-container" id="cat-snack"></div>
+          <div class="photo-input" id="photo-snack" style="display:none">
+            <label class="photo-drop" for="photo-file-snack">
+              <input type="file" accept="image/*" id="photo-file-snack" onchange="onPhotoSelected('snack', this)">
+              <span id="photo-drop-label-snack">📷 사진 선택 / 촬영</span>
+            </label>
+            <img class="photo-thumb" id="photo-thumb-snack" style="display:none">
+            <label class="field-title">추정 칼로리 직접 입력 (kcal)</label>
+            <input type="number" id="photo-kcal-snack" oninput="onFieldChange()" placeholder="0">
+          </div>
           <div class="kcal-readout"><span class="lbl">추정 칼로리</span><span id="kcal-snack">0 kcal</span></div>
         </div>
       </div>
@@ -332,6 +382,9 @@
   import {
     getFirestore, doc, setDoc, getDoc, collection, getDocs, query, orderBy, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import {
+    getStorage, ref as storageRef, uploadBytes, getDownloadURL
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
   // ⚠️ Firebase 콘솔에서 복사한 firebaseConfig로 교체하세요 (index.html과 동일하게)
   const firebaseConfig = {
@@ -346,6 +399,7 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
+  const storage = getStorage(app);
 
   // ---- 사용자 프로필 상수 (BMR 계산용, 마이페이지에서 수정 가능) ----
   let BIRTH_YEAR = 1975;
@@ -440,7 +494,56 @@
   }
   ['breakfast','lunch','dinner','snack'].forEach(renderMealCategories);
 
+  // ---- 칼로리 섭취: 직접입력 / 사진업로드 모드 ----
+  let mealInputMode = 'category';
+  const mealPhotoUrls = {};
+
+  function applyMealModeVisibility(){
+    ['breakfast','lunch','dinner','snack'].forEach(m=>{
+      document.getElementById(`cat-${m}`).style.display = mealInputMode==='category' ? '' : 'none';
+      document.getElementById(`photo-${m}`).style.display = mealInputMode==='photo' ? '' : 'none';
+    });
+  }
+  applyMealModeVisibility();
+
+  document.getElementById('mealModeToggle').addEventListener('click', (e)=>{
+    const opt = e.target.closest('.toggle-opt');
+    if (!opt) return;
+    document.querySelectorAll('#mealModeToggle .toggle-opt').forEach(o=>o.classList.remove('active'));
+    opt.classList.add('active');
+    mealInputMode = opt.dataset.mode;
+    applyMealModeVisibility();
+    updateCardStates();
+  });
+
+  window.onPhotoSelected = async function(mealKey, inputEl){
+    const file = inputEl.files[0];
+    if (!file) return;
+    const label = document.getElementById(`photo-drop-label-${mealKey}`);
+    label.textContent = '업로드 중...';
+    try {
+      const path = `meal-photos/${selectedDateStr}/${mealKey}-${Date.now()}.jpg`;
+      const sRef = storageRef(storage, path);
+      await uploadBytes(sRef, file);
+      const url = await getDownloadURL(sRef);
+      mealPhotoUrls[mealKey] = url;
+      const thumb = document.getElementById(`photo-thumb-${mealKey}`);
+      thumb.src = url;
+      thumb.style.display = 'block';
+      label.textContent = '📷 사진 변경';
+      updateCardStates();
+    } catch(err){
+      console.error(err);
+      label.textContent = '업로드 실패 — 다시 시도';
+    }
+  };
+
   function computeMealKcal(mealKey){
+    if (mealInputMode === 'photo'){
+      const total = Number(document.getElementById(`photo-kcal-${mealKey}`).value) || 0;
+      document.getElementById(`kcal-${mealKey}`).textContent = `${total} kcal`;
+      return total;
+    }
     const sel = mealSelections[mealKey];
     const groups = MEAL_CATEGORIES[mealKey];
     let kcal = 0;
@@ -604,9 +707,18 @@
     selectedDayType = 'work';
     renderWorkTypeChips();
     selectedWorkTypes.clear();
+    document.querySelectorAll("#mealModeToggle .toggle-opt").forEach(o=>o.classList.toggle("active", o.dataset.mode==="category"));
+    mealInputMode = 'category';
+    applyMealModeVisibility();
     ["breakfast","lunch","dinner","snack"].forEach(m=>{
       mealSelections[m] = {};
       document.querySelectorAll(`#cat-${m} .cat-chip`).forEach(c=>c.classList.remove("selected"));
+      delete mealPhotoUrls[m];
+      document.getElementById(`photo-file-${m}`).value = "";
+      document.getElementById(`photo-thumb-${m}`).style.display = "none";
+      document.getElementById(`photo-thumb-${m}`).src = "";
+      document.getElementById(`photo-kcal-${m}`).value = "";
+      document.getElementById(`photo-drop-label-${m}`).textContent = "📷 사진 선택 / 촬영";
       computeMealKcal(m);
     });
     ["input-weight","input-bodyfat","input-muscle","input-fatmass","input-visceral"].forEach(id=>{
@@ -749,7 +861,11 @@
 
     const meals = {};
     ["breakfast","lunch","dinner","snack"].forEach(m=>{
-      meals[m] = { selections: {...mealSelections[m]}, kcal: computeMealKcal(m) };
+      if (mealInputMode === 'photo') {
+        meals[m] = { photoUrl: mealPhotoUrls[m] || null, kcal: computeMealKcal(m) };
+      } else {
+        meals[m] = { selections: {...mealSelections[m]}, kcal: computeMealKcal(m) };
+      }
     });
 
     const data = {
@@ -758,6 +874,7 @@
       intensityBonus: selectedLevel ? selectedLevel.bonus : 0,
       workTypes: [...selectedWorkTypes],
       dayType: selectedDayType,
+      mealInputMode,
       meals,
       weight: Number(document.getElementById("input-weight").value) || null,
       bodyFat: Number(document.getElementById("input-bodyfat").value) || null,
@@ -806,18 +923,37 @@
         if (chip) { chip.classList.add("selected"); selectedWorkTypes.add(v); }
       });
     }
+    if (d.mealInputMode) {
+      mealInputMode = d.mealInputMode;
+      document.querySelectorAll("#mealModeToggle .toggle-opt").forEach(o=>{
+        o.classList.toggle("active", o.dataset.mode === d.mealInputMode);
+      });
+      applyMealModeVisibility();
+    }
     if (d.meals) {
       Object.keys(d.meals).forEach(m=>{
-        const selections = d.meals[m].selections || {};
-        Object.keys(selections).forEach(groupId=>{
-          const val = selections[groupId];
-          const keys = Array.isArray(val) ? val : [val];
-          keys.forEach(key=>{
-            const chip = document.querySelector(`#cat-${m} .cat-group[data-group="${groupId}"] .cat-chip[data-key="${key}"]`);
-            if (chip) chip.classList.add("selected");
+        const mealData = d.meals[m];
+        if (mealData.photoUrl !== undefined) {
+          if (mealData.photoUrl) {
+            mealPhotoUrls[m] = mealData.photoUrl;
+            const thumb = document.getElementById(`photo-thumb-${m}`);
+            thumb.src = mealData.photoUrl;
+            thumb.style.display = 'block';
+            document.getElementById(`photo-drop-label-${m}`).textContent = '📷 사진 변경';
+          }
+          if (mealData.kcal) document.getElementById(`photo-kcal-${m}`).value = mealData.kcal;
+        } else {
+          const selections = mealData.selections || {};
+          Object.keys(selections).forEach(groupId=>{
+            const val = selections[groupId];
+            const keys = Array.isArray(val) ? val : [val];
+            keys.forEach(key=>{
+              const chip = document.querySelector(`#cat-${m} .cat-group[data-group="${groupId}"] .cat-chip[data-key="${key}"]`);
+              if (chip) chip.classList.add("selected");
+            });
+            mealSelections[m][groupId] = val;
           });
-          mealSelections[m][groupId] = val;
-        });
+        }
         computeMealKcal(m);
       });
     }
