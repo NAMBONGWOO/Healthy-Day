@@ -96,6 +96,12 @@
   .photo-drop input[type=file]{ display:none; }
   .photo-thumb{ width:100%; max-height:170px; object-fit:cover; border-radius:10px; margin-top:10px; display:block; }
 
+  .detail-overlay{ position:absolute; inset:0; background:rgba(38,36,31,0.4); z-index:50; align-items:flex-end; }
+  .detail-sheet{ background:var(--surface); width:100%; border-radius:20px 20px 0 0; padding:20px 18px 26px; max-height:78%; overflow-y:auto; }
+  .detail-sheet-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .detail-title{ font-size:15px; font-weight:700; color:var(--text); }
+  .detail-close{ font-family:var(--mono); font-size:11px; color:var(--text-dim); cursor:pointer; padding:4px 10px; border:1px solid var(--line); border-radius:8px; }
+
   .submit-btn{ width:100%; padding:16px; background:var(--amber); color:#FFF; font-weight:700; font-size:14.5px; border:none; border-radius:12px; margin-top:6px; cursor:pointer; }
   .submit-btn:disabled{ opacity:.5; cursor:not-allowed; }
   .submit-hint{ text-align:center; font-family:var(--mono); font-size:10.5px; color:var(--text-dim); margin-top:10px; }
@@ -374,6 +380,16 @@
     <div class="nav-item" onclick="showScreen('dashboard')"><div class="nav-icon"></div><div class="nav-label">분석</div></div>
     <div class="nav-item" onclick="showScreen('mypage')"><div class="nav-icon"></div><div class="nav-label">마이페이지</div></div>
   </div>
+
+  <div class="detail-overlay" id="metricDetailOverlay" style="display:none;" onclick="if(event.target===this) closeMetricDetail()">
+    <div class="detail-sheet">
+      <div class="detail-sheet-header">
+        <span class="detail-title">지표</span>
+        <span class="detail-close" onclick="closeMetricDetail()">닫기</span>
+      </div>
+      <div class="detail-body"></div>
+    </div>
+  </div>
 </div>
 
 <script type="module">
@@ -411,6 +427,8 @@
   function todayStr(){ return dateToStr(new Date()); }
 
   let selectedDateStr = todayStr();
+  let trendPeriod = 'week'; // 'week' | 'month'
+  let allLogsCache = [];
 
   function calcAge(){
     return new Date().getFullYear() - BIRTH_YEAR;
@@ -972,6 +990,7 @@
     const snap = await getDocs(q);
     const logs = [];
     snap.forEach(docSnap => logs.push({ id: docSnap.id, ...docSnap.data() }));
+    allLogsCache = logs;
 
     if (logs.length === 0) {
       container.innerHTML = `<div class="empty-state">아직 기록이 없어요.<br>입력 탭에서 먼저 기록해주세요.</div>`;
@@ -992,13 +1011,25 @@
     if (balance > -300 && balance < 200) balanceColor = "var(--green)";
     if (balance < -600) balanceColor = "var(--red)";
 
-    const weightLogs = logs.filter(l => l.weight);
+    function filterByPeriod(allLogs, period){
+      const endDate = new Date(selectedDateStr+"T00:00:00");
+      const days = period === 'month' ? 30 : 7;
+      const startDate = new Date(endDate);
+      startDate.setDate(startDate.getDate() - (days-1));
+      return allLogs.filter(l=>{
+        const d = new Date(l.id+"T00:00:00");
+        return d >= startDate && d <= endDate;
+      });
+    }
+    const trendLogs = filterByPeriod(logs, trendPeriod);
+
+    const weightLogs = trendLogs.filter(l => l.weight);
     const firstW = weightLogs[0]?.weight;
     const lastW = weightLogs[weightLogs.length-1]?.weight;
     const delta = (firstW && lastW) ? (lastW - firstW).toFixed(1) : null;
 
     function trendFor(field, digits){
-      const arr = logs.filter(l => l[field] != null);
+      const arr = trendLogs.filter(l => l[field] != null);
       if (!arr.length) return null;
       const first = arr[0][field], last = arr[arr.length-1][field];
       const d = (last - first).toFixed(digits);
@@ -1006,6 +1037,7 @@
     }
     const bodyFatTrend = trendFor('bodyFat', 1);
     const muscleTrend = trendFor('muscleMass', 2);
+    const fatMassTrend = trendFor('fatMass', 2);
     const visceralTrend = trendFor('visceralFat', 0);
 
     let svgPoints = "";
@@ -1109,30 +1141,82 @@
       </div>
 
       <div class="card open">
-        <div class="acc-header"><div class="acc-header-left"><span class="acc-title" style="color:var(--text)">누적 추이</span></div></div>
+        <div class="acc-header">
+          <div class="acc-header-left"><span class="acc-title" style="color:var(--text)">누적 추이</span></div>
+          <div class="toggle-row" style="margin-bottom:0;">
+            <div class="toggle-opt ${trendPeriod==='week'?'active':''}" onclick="setTrendPeriod('week')">주</div>
+            <div class="toggle-opt ${trendPeriod==='month'?'active':''}" onclick="setTrendPeriod('month')">월</div>
+          </div>
+        </div>
         <div class="acc-body" style="max-height:600px; padding:0 18px 18px;">
           ${lastW ? `
           <div class="weight-hero">
             <span class="num">${lastW}<span style="font-size:14px;">kg</span></span>
             ${delta ? `<span class="delta">${delta<0?"▼":"▲"} ${Math.abs(delta)}kg</span>` : ""}
           </div>
-          <div class="trend-meta">${firstW}kg → ${lastW}kg · 총 ${weightLogs.length}회 기록</div>
+          <div class="trend-meta">${firstW}kg → ${lastW}kg · ${trendPeriod==='week'?'최근 1주':'최근 1개월'} ${weightLogs.length}회 기록</div>
           ${svgPoints ? `
           <svg viewBox="0 0 340 90" style="width:100%; margin-top:14px;">
             <polyline points="${svgPoints}" fill="none" stroke="#C67A1E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>` : `<div class="empty-state">추이를 보려면 2회 이상 기록이 필요해요</div>`}
-          ` : `<div class="empty-state">체중 기록이 아직 없어요</div>`}
+          ` : `<div class="empty-state">${trendPeriod==='week'?'최근 1주':'최근 1개월'} 체중 기록이 없어요</div>`}
 
-          ${(bodyFatTrend || muscleTrend || visceralTrend) ? `
+          ${(bodyFatTrend || muscleTrend || fatMassTrend || visceralTrend) ? `
           <div class="stat-grid" style="margin-top:14px;">
-            ${bodyFatTrend ? `<div class="stat-box"><div class="k">체지방률</div><div class="v">${bodyFatTrend.last}% <span style="font-size:10px;color:${bodyFatTrend.delta<0?'var(--green)':'var(--amber)'}">${bodyFatTrend.delta<0?"▼":"▲"}${Math.abs(bodyFatTrend.delta)}</span></div></div>` : ''}
-            ${muscleTrend ? `<div class="stat-box"><div class="k">골격근량</div><div class="v">${muscleTrend.last}kg <span style="font-size:10px;color:${muscleTrend.delta>=0?'var(--green)':'var(--amber)'}">${muscleTrend.delta>=0?"▲":"▼"}${Math.abs(muscleTrend.delta)}</span></div></div>` : ''}
-            ${visceralTrend ? `<div class="stat-box"><div class="k">내장지방지수</div><div class="v">${visceralTrend.last} <span style="font-size:10px;color:${visceralTrend.delta<=0?'var(--green)':'var(--amber)'}">${visceralTrend.delta<=0?"▼":"▲"}${Math.abs(visceralTrend.delta)}</span></div></div>` : ''}
+            ${bodyFatTrend ? `<div class="stat-box" onclick="showMetricDetail('bodyFat','체지방률','%',1,'#C67A1E')" style="cursor:pointer;"><div class="k">체지방률 ›</div><div class="v">${bodyFatTrend.last}% <span style="font-size:10px;color:${bodyFatTrend.delta<0?'var(--green)':'var(--amber)'}">${bodyFatTrend.delta<0?"▼":"▲"}${Math.abs(bodyFatTrend.delta)}</span></div></div>` : ''}
+            ${muscleTrend ? `<div class="stat-box" onclick="showMetricDetail('muscleMass','골격근량','kg',2,'#2E9563')" style="cursor:pointer;"><div class="k">골격근량 ›</div><div class="v">${muscleTrend.last}kg <span style="font-size:10px;color:${muscleTrend.delta>=0?'var(--green)':'var(--amber)'}">${muscleTrend.delta>=0?"▲":"▼"}${Math.abs(muscleTrend.delta)}</span></div></div>` : ''}
+            ${fatMassTrend ? `<div class="stat-box" onclick="showMetricDetail('fatMass','체지방량','kg',2,'#C4483C')" style="cursor:pointer;"><div class="k">체지방량 ›</div><div class="v">${fatMassTrend.last}kg <span style="font-size:10px;color:${fatMassTrend.delta<=0?'var(--green)':'var(--amber)'}">${fatMassTrend.delta<=0?"▼":"▲"}${Math.abs(fatMassTrend.delta)}</span></div></div>` : ''}
+            ${visceralTrend ? `<div class="stat-box" onclick="showMetricDetail('visceralFat','내장지방지수','',0,'#6F6C63')" style="cursor:pointer;"><div class="k">내장지방지수 ›</div><div class="v">${visceralTrend.last} <span style="font-size:10px;color:${visceralTrend.delta<=0?'var(--green)':'var(--amber)'}">${visceralTrend.delta<=0?"▼":"▲"}${Math.abs(visceralTrend.delta)}</span></div></div>` : ''}
           </div>` : ''}
         </div>
       </div>
     `;
   }
+
+  window.setTrendPeriod = function(p){
+    trendPeriod = p;
+    loadDashboard();
+  };
+
+  window.showMetricDetail = function(field, label, unit, digits, color){
+    const arr = allLogsCache.filter(l => l[field] != null);
+    const overlay = document.getElementById('metricDetailOverlay');
+    if (!arr.length){
+      overlay.querySelector('.detail-body').innerHTML = `<div class="empty-state">${label} 기록이 아직 없어요</div>`;
+      overlay.querySelector('.detail-title').textContent = label;
+      overlay.style.display = 'flex';
+      return;
+    }
+    const vals = arr.map(l=>l[field]);
+    const latest = vals[vals.length-1];
+    const min = Math.min(...vals), max = Math.max(...vals);
+    const range = (max-min) || 1;
+    const points = arr.map((l,i)=>{
+      const x = arr.length>1 ? (i/(arr.length-1))*300 : 150;
+      const y = 16 + (1 - (l[field]-min)/range) * 70;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(" ");
+    const firstDate = arr[0].id.slice(5).replace('-','.');
+    const lastDate = arr[arr.length-1].id.slice(5).replace('-','.');
+    overlay.querySelector('.detail-title').textContent = label;
+    overlay.querySelector('.detail-body').innerHTML = `
+      <div class="weight-hero">
+        <span class="num" style="color:${color}">${latest.toFixed(digits)}<span style="font-size:14px;">${unit}</span></span>
+      </div>
+      <div class="trend-meta">최저 ${min.toFixed(digits)}${unit} · 최고 ${max.toFixed(digits)}${unit} · 총 ${arr.length}회 기록</div>
+      ${arr.length>1 ? `
+      <svg viewBox="0 0 300 100" style="width:100%; margin-top:16px;">
+        <polyline points="${points}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div style="display:flex; justify-content:space-between; font-family:var(--mono); font-size:10px; color:var(--text-dim); margin-top:2px;">
+        <span>${firstDate}</span><span>${lastDate}</span>
+      </div>` : `<div class="empty-state">추이를 보려면 2회 이상 기록이 필요해요</div>`}
+    `;
+    overlay.style.display = 'flex';
+  };
+  window.closeMetricDetail = function(){
+    document.getElementById('metricDetailOverlay').style.display = 'none';
+  };
 </script>
 
 </body>
