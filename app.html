@@ -449,20 +449,25 @@
   const LUNCH_DINNER_CATS = [
     { id:'staple', title:'주식 (밥·면·빵)', options:[
       {key:'none',label:'없음',kcal:0},{key:'light',label:'소량(반공기)',kcal:140},
-      {key:'normal',label:'보통(1공기)',kcal:280},{key:'much',label:'많음(1.5공기+)',kcal:400}
+      {key:'normal',label:'보통(1공기)',kcal:280},{key:'much',label:'많음(1.5공기+)',kcal:400},
+      {key:'potato',label:'감자류',kcal:120},{key:'large',label:'곱배기·대형(외식)',kcal:550}
     ]},
     { id:'protein', title:'단백질 (먹은 걸 다 눌러주세요)', multi:true, options:[
       {key:'lowfat',label:'닭가슴살·두부·흰살생선',kcal:120},
       {key:'meat',label:'돼지·소고기 일반',kcal:180},
       {key:'highfat',label:'양고기·삼겹살·연어 등(고지방)',kcal:320},
       {key:'seafood',label:'해산물(새우·오징어 등)',kcal:150},
-      {key:'egg',label:'계란',kcal:100}
+      {key:'egg',label:'계란',kcal:100},
+      {key:'processed',label:'가공육(소시지·떡갈비·햄 등)',kcal:130},
+      {key:'friedmain',label:'튀김육류 메인(치킨텐더·탕수육 등)',kcal:550}
     ]},
     { id:'fat', title:'지방·오일', options:[
-      {key:'none',label:'없음',kcal:0},{key:'light',label:'조금',kcal:100},{key:'much',label:'많음',kcal:200}
+      {key:'none',label:'없음',kcal:0},{key:'light',label:'조금',kcal:100},{key:'much',label:'많음',kcal:200},
+      {key:'avocado',label:'아보카도(반개)',kcal:90}
     ]},
     { id:'soup', title:'국·찌개', options:[
-      {key:'none',label:'안 먹음',kcal:0},{key:'light',label:'건더기 위주',kcal:100},{key:'normal',label:'국물까지',kcal:180}
+      {key:'none',label:'안 먹음',kcal:0},{key:'clear',label:'맑은국물 소량',kcal:40},
+      {key:'light',label:'건더기 위주',kcal:100},{key:'normal',label:'국물까지',kcal:180}
     ]},
     { id:'side', title:'밑반찬·채소', options:[
       {key:'few',label:'1~2가지',kcal:30},{key:'normal',label:'3~4가지',kcal:60},{key:'many',label:'5가지 이상',kcal:100}
@@ -475,7 +480,8 @@
     breakfast: [
       { id:'staple', title:'주식 (빵·시리얼·밥 등)', options:[
         {key:'none',label:'없음',kcal:0},{key:'light',label:'가벼움',kcal:100},
-        {key:'normal',label:'보통',kcal:200},{key:'much',label:'많음',kcal:320}
+        {key:'normal',label:'보통',kcal:200},{key:'much',label:'많음',kcal:320},
+        {key:'potato',label:'감자류',kcal:120}
       ]},
       { id:'protein', title:'단백질 (먹은 걸 다 눌러주세요)', multi:true, options:[
         {key:'egg',label:'계란(1~2개)',kcal:150},
@@ -485,7 +491,8 @@
         {key:'cheese',label:'치즈(1장)',kcal:80}
       ]},
       { id:'fat', title:'지방·오일', options:[
-        {key:'none',label:'없음',kcal:0},{key:'light',label:'드레싱·오일 조금',kcal:120},{key:'much',label:'드레싱·오일 많음',kcal:240}
+        {key:'none',label:'없음',kcal:0},{key:'light',label:'드레싱·오일 조금',kcal:120},{key:'much',label:'드레싱·오일 많음',kcal:240},
+        {key:'avocado',label:'아보카도(반개)',kcal:90}
       ]},
       { id:'fruit', title:'과일·채소', options:[
         {key:'none',label:'없음',kcal:0},{key:'light',label:'조금',kcal:40},{key:'normal',label:'보통',kcal:80}
