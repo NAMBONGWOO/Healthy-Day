@@ -72,10 +72,23 @@
   .level-opt.selected{ background:var(--amber-dim); border-color:var(--amber); }
   .level-opt.selected .lv-num, .level-opt.selected .lv-label{ color:var(--amber); font-weight:700; }
 
-  .cat-group{ margin-bottom:14px; }
+  .cat-group{ margin-bottom:10px; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--surface-2); transition:border-color .2s, background .2s; }
   .cat-group:last-child{ margin-bottom:0; }
-  .cat-title{ font-size:11.5px; font-weight:600; color:var(--text-muted); margin-bottom:7px; }
-  .cat-chip{ font-size:11.5px; padding:7px 11px; border-radius:16px; border:1px solid var(--line); background:var(--surface-2); color:var(--text-muted); cursor:pointer; }
+  .cat-group.filled{ border-color:#CFE3D6; background:#F4FAF6; }
+  .cat-acc-header{ display:flex; align-items:center; justify-content:space-between; padding:11px 13px; cursor:pointer; }
+  .cat-acc-left{ display:flex; align-items:center; gap:8px; min-width:0; }
+  .cat-acc-dot{ width:6px; height:6px; border-radius:50%; background:var(--text-dim); flex-shrink:0; transition:background .2s; }
+  .cat-group.filled .cat-acc-dot{ background:var(--green); }
+  .cat-title{ font-size:11.5px; font-weight:600; color:var(--text-muted); transition:color .2s; }
+  .cat-group.filled .cat-title{ color:var(--text); }
+  .cat-acc-right{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .cat-acc-preview{ font-family:var(--mono); font-size:10px; color:var(--text-dim); max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; transition:color .2s; }
+  .cat-group.filled .cat-acc-preview{ color:var(--green); font-weight:600; }
+  .cat-acc-chevron{ width:7px; height:7px; border-right:1.4px solid var(--text-dim); border-bottom:1.4px solid var(--text-dim); transform:rotate(45deg); margin-top:-2px; transition:transform .2s; flex-shrink:0; }
+  .cat-group.open .cat-acc-chevron{ transform:rotate(-135deg); margin-top:2px; }
+  .cat-acc-body{ max-height:0; overflow:hidden; transition:max-height .25s, padding .25s; padding:0 13px; }
+  .cat-group.open .cat-acc-body{ max-height:320px; padding:0 13px 13px; }
+  .cat-chip{ font-size:11.5px; padding:7px 11px; border-radius:16px; border:1px solid var(--line); background:var(--surface); color:var(--text-muted); cursor:pointer; }
   .cat-chip.selected{ background:var(--amber-dim); border-color:var(--amber); color:var(--amber); font-weight:600; }
   .kcal-readout{ margin-top:14px; padding:11px 13px; background:var(--surface-2); border-radius:9px; font-family:var(--mono); font-size:13px; font-weight:600; color:var(--text); display:flex; justify-content:space-between; align-items:center; }
   .kcal-readout .lbl{ font-family:var(--sans); font-size:11px; font-weight:500; color:var(--text-dim); }
@@ -452,14 +465,26 @@
       {key:'normal',label:'보통(1공기)',kcal:280},{key:'much',label:'많음(1.5공기+)',kcal:400},
       {key:'potato',label:'감자류',kcal:120},{key:'large',label:'곱배기·대형(외식)',kcal:550}
     ]},
+    { id:'instant', title:'즉석식·인스턴트 (주식 대신 선택)', options:[
+      {key:'none',label:'해당없음',kcal:0},
+      {key:'gimbap',label:'김밥 1줄',kcal:350},
+      {key:'cupNoodleS',label:'컵라면(소)',kcal:300},
+      {key:'cupNoodleL',label:'컵라면(큰컵)',kcal:400},
+      {key:'clearNoodle',label:'맑은면(라면·국수)',kcal:500},
+      {key:'burger',label:'햄버거 단품',kcal:450},
+      {key:'richNoodle',label:'진한면(짜장·짬뽕)',kcal:700},
+      {key:'burgerSet',label:'햄버거 세트',kcal:800},
+      {key:'pizza2',label:'피자 2조각',kcal:500},
+      {key:'pizza4',label:'피자 4조각',kcal:1000}
+    ]},
     { id:'protein', title:'단백질 (먹은 걸 다 눌러주세요)', multi:true, options:[
       {key:'lowfat',label:'닭가슴살·두부·흰살생선',kcal:120},
       {key:'meat',label:'돼지·소고기 일반',kcal:180},
       {key:'highfat',label:'양고기·삼겹살·연어 등(고지방)',kcal:320},
-      {key:'seafood',label:'해산물(새우·오징어 등)',kcal:150},
+      {key:'seafood',label:'해산물',kcal:150},
       {key:'egg',label:'계란',kcal:100},
-      {key:'processed',label:'가공육(소시지·떡갈비·햄 등)',kcal:130},
-      {key:'friedmain',label:'튀김육류 메인(치킨텐더·탕수육 등)',kcal:550}
+      {key:'processed',label:'가공육',kcal:130},
+      {key:'friedmain',label:'튀김육류 메인',kcal:550}
     ]},
     { id:'fat', title:'지방·오일', options:[
       {key:'none',label:'없음',kcal:0},{key:'light',label:'조금',kcal:100},{key:'much',label:'많음',kcal:200},
@@ -472,7 +497,7 @@
     { id:'side', title:'밑반찬·채소', options:[
       {key:'few',label:'1~2가지',kcal:30},{key:'normal',label:'3~4가지',kcal:60},{key:'many',label:'5가지 이상',kcal:100}
     ]},
-    { id:'fried', title:'튀김·가공식품', options:[
+    { id:'fried', title:'튀김·가공식품(소량)', options:[
       {key:'none',label:'없음',kcal:0},{key:'light',label:'조금 포함',kcal:120},{key:'much',label:'많음',kcal:250}
     ]}
   ];
@@ -517,14 +542,46 @@
     const groups = MEAL_CATEGORIES[mealKey];
     container.innerHTML = groups.map(g => `
       <div class="cat-group" data-group="${g.id}">
-        <div class="cat-title">${g.title}${g.multi ? ' <span style="font-weight:400;color:var(--text-dim);font-size:10.5px;">(중복 선택 가능)</span>' : ''}</div>
-        <div class="chip-row">
-          ${g.options.map(o => `<div class="cat-chip" data-key="${o.key}" data-kcal="${o.kcal ?? ''}" data-mult="${o.mult ?? ''}">${o.label}</div>`).join('')}
+        <div class="cat-acc-header" onclick="toggleCatGroup(this)">
+          <div class="cat-acc-left">
+            <span class="cat-acc-dot"></span>
+            <span class="cat-title">${g.title}${g.multi ? ' <span style="font-weight:400;color:var(--text-dim);font-size:10px;">(중복)</span>' : ''}</span>
+          </div>
+          <div class="cat-acc-right">
+            <span class="cat-acc-preview">미입력</span>
+            <span class="cat-acc-chevron"></span>
+          </div>
+        </div>
+        <div class="cat-acc-body">
+          <div class="chip-row">
+            ${g.options.map(o => `<div class="cat-chip" data-key="${o.key}" data-kcal="${o.kcal ?? ''}" data-mult="${o.mult ?? ''}">${o.label}</div>`).join('')}
+          </div>
         </div>
       </div>
     `).join('');
   }
   ['breakfast','lunch','dinner','snack'].forEach(renderMealCategories);
+
+  window.toggleCatGroup = function(headerEl){
+    headerEl.closest('.cat-group').classList.toggle('open');
+  };
+
+  function updateCatGroupPreview(mealKey){
+    const groups = MEAL_CATEGORIES[mealKey];
+    const sel = mealSelections[mealKey];
+    groups.forEach(g=>{
+      const groupEl = document.querySelector(`#cat-${mealKey} .cat-group[data-group="${g.id}"]`);
+      if (!groupEl) return;
+      const val = sel[g.id];
+      const keys = g.multi ? (Array.isArray(val) ? val : (val ? [val] : [])) : (val ? [val] : []);
+      const labels = keys.map(k=>{
+        const opt = g.options.find(o=>o.key===k);
+        return opt ? opt.label : k;
+      });
+      groupEl.classList.toggle('filled', labels.length>0);
+      groupEl.querySelector('.cat-acc-preview').textContent = labels.length ? labels.join(', ') : '미입력';
+    });
+  }
 
   // ---- 칼로리 섭취: 직접입력 / 사진업로드 모드 ----
   let mealInputMode = 'category';
@@ -613,6 +670,7 @@
     });
     const total = Math.round(kcal * multiplier);
     document.getElementById(`kcal-${mealKey}`).textContent = `${total} kcal`;
+    updateCatGroupPreview(mealKey);
     return total;
   }
 
@@ -753,6 +811,7 @@
 
   function resetInputForm(){
     document.querySelectorAll("#screen-input .card").forEach(c=>c.classList.remove("open"));
+    document.querySelectorAll("#screen-input .cat-group").forEach(c=>c.classList.remove("open"));
     document.getElementById("input-steps").value = "";
     document.querySelectorAll("#levelRow .level-opt").forEach(o=>o.classList.remove("selected"));
     selectedLevel = null;
